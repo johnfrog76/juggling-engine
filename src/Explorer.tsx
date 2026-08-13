@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Button,
+  Checkbox,
   DrawerBody,
   DrawerHeader,
   DrawerHeaderTitle,
@@ -8,8 +9,8 @@ import {
   OverlayDrawer,
 } from "@fluentui/react-components";
 import { DismissRegular, SettingsRegular } from "@fluentui/react-icons";
-import { useSiteswapSim, ALWAYS_LIVE, expand, validate, type Planet, type Prop } from "./engine";
-import { formatSync, sampleSyncAt, parseSync, validateSync } from "./sync";
+import { useSiteswapSim, ALWAYS_LIVE, expand, validate, orbitsOf, sampleAt, type Planet, type Prop } from "./engine";
+import { formatSync, sampleSyncAt, parseSync, validateSync, syncOrbits } from "./sync";
 import {
   CATALOGUE,
   asCurrent,
@@ -19,6 +20,7 @@ import {
   type Current,
 } from "./patterns";
 import { PropGlyph, GraphicHand } from "./ui/glyphs";
+import { AvatarFigure, AVATARS, type Avatar } from "./ui/Avatar";
 import { art } from "./ui/theme";
 import { useCompactLayout } from "./ui/useCompactLayout";
 
@@ -31,11 +33,16 @@ function LiveFigure({
   planet,
   height = 360,
   fill = false,
+  avatar = "figure",
+  trails = false,
 }: {
   current: Current;
   prop: Prop;
   planet: Planet;
   height?: number;
+  avatar?: Avatar;
+  /** Draw each prop's path as a faint arc behind it. */
+  trails?: boolean;
   /**
    * Take the height of whatever contains this instead of a fixed number.
    *
@@ -86,6 +93,34 @@ function LiveFigure({
       : Math.max(...expand(current.digits), 3);
 
   // In fill mode the usable height is measured rather than passed.
+  // ARC PATHS. Sampled from the same functions the props use, so a trail can
+  // never disagree with the prop riding it. Recomputed only when the pattern,
+  // prop or gravity changes -- not per frame.
+  const arcs = useMemo(() => {
+    if (!trails) return [];
+    const STEPS = 90;
+    const cycle =
+      current.kind === "sync"
+        ? syncOrbits(current.beats).cycleBeats
+        : orbitsOf(expand(current.digits)).cycleBeats;
+    const frames = Array.from({ length: STEPS + 1 }, (_, i) => {
+      const tt = (i / STEPS) * cycle;
+      return current.kind === "sync"
+        ? sampleSyncAt(current.beats, tt, { prop, planet })
+        : sampleAt(expand(current.digits), tt, { prop, planet });
+    });
+    const n = frames[0]?.length ?? 0;
+    return Array.from({ length: n }, (_, k) =>
+      frames
+        // SVG y grows downward and the sampler is already negative-up, so the
+        // value passes through unnegated -- negating it flipped the arc under
+        // the hands.
+        .map((f, i) => `${i === 0 ? "M" : "L"} ${f[k].x.toFixed(1)} ${f[k].y.toFixed(1)}`)
+        .join(" "),
+    );
+  }, [trails, labelOf(current), prop, planet]);
+  const arcFor = (i: number) => arcs[i] ?? "";
+
   const boxRef = useRef<HTMLDivElement | null>(null);
   const [measured, setMeasured] = useState(0);
   useEffect(() => {
@@ -129,19 +164,51 @@ function LiveFigure({
         }}
       />
           <div style={{ position: "absolute", left: "50%", bottom: "16%", transform: `translateX(-50%) scale(${fit})`, transformOrigin: "50% 100%" }}>
-        {[-1, 1].map((side) => (
-          <div
-            key={side}
-            style={{
-              position: "absolute",
-              left: side * 64,
-              bottom: 0,
-              transform: `translateX(-50%) scaleX(${side})`,
-            }}
+        {/* THE AVATAR'S HANDS MUST LAND ON THE REAL HAND LINE. Its box is 150
+            tall with hands drawn at y=74, so it hangs 76 units below the prop
+            layer's origin -- without that offset the body floats above its own
+            hands, which is exactly how it looked when the figure first went in. */}
+        <div style={{ position: "absolute", left: 0, bottom: -76, width: 0 }}>
+          <AvatarFigure kind={avatar} prop={prop} />
+        </div>
+        {/* THE BLOCK HANDS ARE FOR THE HANDS-ONLY VIEW (John). Every other
+            avatar draws its own smaller hands, which belong with the body --
+            the block at figure scale reads as a claw. */}
+        {avatar === "hands" &&
+          [-1, 1].map((side) => (
+            <div
+              key={side}
+              style={{
+                position: "absolute",
+                left: side * 64,
+                bottom: 0,
+                transform: `translateX(-50%) scaleX(${side})`,
+              }}
+            >
+              <GraphicHand side={side < 0 ? "left" : "right"} prop={prop} size={44} color={art.body} />
+            </div>
+          ))}
+        {/* ARC TRAILS, on demand (John: "view arc should be a setting"). Each
+            prop's path drawn faintly behind it, graded so three balls each on
+            their own arc do not merge into one wire with beads on it. */}
+        {trails && (
+          <svg
+            style={{ position: "absolute", left: -160, bottom: -20, width: 320, height: 420, overflow: "visible", pointerEvents: "none" }}
+            viewBox="-160 -400 320 420"
           >
-            <GraphicHand side={side < 0 ? "left" : "right"} prop={prop} size={44} color={art.body} />
-          </div>
-        ))}
+            {positions.map((_, i) => (
+              <path
+                key={i}
+                d={arcFor(i)}
+                fill="none"
+                stroke={art.prop}
+                strokeWidth="1.5"
+                opacity={0.3 - (i % 3) * 0.07}
+                strokeLinecap="round"
+              />
+            ))}
+          </svg>
+        )}
         {positions.map((p, i) => (
           <div
             key={i}
@@ -149,7 +216,23 @@ function LiveFigure({
               position: "absolute",
               left: p.x,
               bottom: -p.y,
-              transform: "translate(-50%, 50%)",
+            // A CLUB IS HELD BY ITS HANDLE (John), so it cannot be anchored
+            // by its centre the way a ball is. Centring put the middle of the
+            // club at hand height, which hangs the knob below the palm and
+            // stands the body up out of it -- the wrong end in the hand.
+            //
+            // A held club is also flipped 180 degrees (John): the glyph is
+            // drawn body-up for flight, which puts the fat end in the palm and
+            // the handle in the air -- backwards. Turning it over puts the
+            // handle in the hand where a juggler actually grips it.
+            //
+            // Airborne clubs keep the centre anchor and their own spin: a club
+            // in flight rotates about its balance point, and the centre is the
+            // honest pivot there.
+              transform:
+                prop === "clubs" && !p.airborne
+                  ? "translate(-50%, 12%) rotate(180deg)"
+                  : "translate(-50%, 50%)",
             }}
           >
             <PropGlyph prop={prop} size={prop === "rings" ? 26 : 18} color={art.prop} view="front" spin={p.spin} />
@@ -214,6 +297,8 @@ export function Explorer() {
   // thing worth seeing first.
   const compact = useCompactLayout();
   const [drawer, setDrawer] = useState(!compact);
+  const [avatar, setAvatar] = useState<Avatar>("figure");
+  const [trails, setTrails] = useState(false);
 
   // `current` is rebuilt on every keystroke but is usually equivalent; its
   // label is the stable identity.
@@ -385,6 +470,21 @@ export function Explorer() {
           <Segmented options={["earth", "mars"] as const} value={planet} onChange={setPlanet} />
         </div>
       </div>
+
+      {/* WHO IS DOING THE JUGGLING (John). Once there is a body it is a
+          PARTICULAR body, so it has to be a choice rather than an assumption
+          baked into the render. */}
+      <div>
+        <div style={{ fontSize: "0.72rem", letterSpacing: "0.2em", color: art.muted, marginBottom: "0.5rem" }}>AVATAR</div>
+        <Segmented options={AVATARS} value={avatar} onChange={setAvatar} />
+      </div>
+
+      {/* "view arc should be a setting - a checkbox" (John) */}
+      <Checkbox
+        checked={trails}
+        onChange={(_, d) => setTrails(!!d.checked)}
+        label={<span style={{ fontFamily: art.mono, fontSize: "0.85rem", color: art.text }}>show arcs</span>}
+      />
     </>
   );
 
@@ -435,7 +535,7 @@ export function Explorer() {
           overflow: "hidden",
         }}
       >
-        <LiveFigure current={current} prop={prop} planet={planet} height={0} fill />
+        <LiveFigure current={current} prop={prop} planet={planet} height={0} fill avatar={avatar} trails={trails} />
         {/* WHEN THE PANEL IS SHUT, THIS IS THE WAY BACK (John). Closing the
             drawer gives the pattern the whole frame, so the only affordance
             left has to be unmissable -- a big gear floating over the stage. */}

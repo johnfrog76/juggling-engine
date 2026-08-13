@@ -2,6 +2,7 @@ import { useSiteswapSim, expand, type Planet, type Prop } from "../engine";
 import { art } from "./theme";
 import { GraphicHand, PropGlyph } from "./glyphs";
 import { Stage } from "./Stage";
+import { Juggler } from "./Juggler";
 
 /**
  * One pattern, running, with nothing to drive it.
@@ -50,6 +51,7 @@ export function LivePattern({
           transformOrigin: "50% 100%",
         }}
       >
+        <Juggler />
         {[-1, 1].map((side) => (
           <div
             key={side}
@@ -70,7 +72,23 @@ export function LivePattern({
               position: "absolute",
               left: p.x,
               bottom: -p.y,
-              transform: "translate(-50%, 50%)",
+            // A CLUB IS HELD BY ITS HANDLE (John), so it cannot be anchored
+            // by its centre the way a ball is. Centring put the middle of the
+            // club at hand height, which hangs the knob below the palm and
+            // stands the body up out of it -- the wrong end in the hand.
+            //
+            // A held club is also flipped 180 degrees (John): the glyph is
+            // drawn body-up for flight, which puts the fat end in the palm and
+            // the handle in the air -- backwards. Turning it over puts the
+            // handle in the hand where a juggler actually grips it.
+            //
+            // Airborne clubs keep the centre anchor and their own spin: a club
+            // in flight rotates about its balance point, and the centre is the
+            // honest pivot there.
+              transform:
+                prop === "clubs" && !p.airborne
+                  ? "translate(-50%, 12%) rotate(180deg)"
+                  : "translate(-50%, 50%)",
             }}
           >
             <PropGlyph

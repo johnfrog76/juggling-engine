@@ -90,6 +90,39 @@ export const BEAT_S = 0.42; // seconds per beat — shared with the sibling deck
  */
 export const DWELL_BEATS = 1.4;
 
+/**
+ * How long a prop is actually in the air, in beats.
+ *
+ * DWELL IS NOT CONSTANT, and pretending it was made low patterns look wrong.
+ * Height goes as the square of airtime, so with a flat 1.4-beat dwell a `3`
+ * got 1.6 beats of flight and an apex of about 29px against a `7` at 361px --
+ * twelve to one. On screen the three shuffled along the hand line, and in
+ * clubs the arc was smaller than the prop. John kept flagging it: "the 3
+ * juggle club cascade has no arc".
+ *
+ * The physical reading is that a hand holds a LOW prop proportionally longer.
+ * There is no time to hold a nine for 1.4 beats -- the next one is already
+ * coming -- but a three sits in the hand comfortably that long. So dwell is
+ * capped at a fraction of the throw value and only bites at the bottom of the
+ * range: a `3` dwells 1.05 beats instead of 1.4 and its apex rises from 29px to
+ * about 44, while everything from `4` upward is untouched -- which is the other
+ * half of John's note, that a seven does not need expanding.
+ *
+ * 0.35 IS A CEILING, NOT A PREFERENCE. Push it lower and props spend more time
+ * airborne until N-2H stops holding: at 0.3 a three shows two or three in the
+ * air instead of one or two, and that invariant is the whole claim. The tests
+ * catch it. Do not raise the arc further without a different model.
+ *
+ * This is a model change, not a fudge factor. An earlier attempt DID add a
+ * fudge -- a minimum apex -- and it was reverted, because it lifted the `1` in
+ * `441` (a hand-across, not a toss) into a real arc. No toss works that way.
+ */
+export const DWELL_FRACTION = 0.35;
+
+export function airtimeOf(value: number): number {
+  return Math.max(value - Math.min(DWELL_BEATS, DWELL_FRACTION * value), 0.45);
+}
+
 const HAND_X = 64; // px, hands at ±HAND_X around the centreline
 
 /** Surface gravity, m/s². The one constant whose change re-times the whole deck. */
@@ -438,7 +471,7 @@ export function sampleAt(
     for (const f of orbit) {
       for (const shift of [-cycleBeats, 0, cycleBeats]) {
         const start = f.throwBeat + shift;
-        const air = Math.max(f.value - DWELL_BEATS, 0.45);
+        const air = airtimeOf(f.value);
         if (tt >= start && tt < start + air) {
           const p = (tt - start) / air;
           const x1 = f.fromRight ? HAND_X : -HAND_X;
@@ -462,7 +495,7 @@ export function sampleAt(
     for (const f of orbit) {
       for (const shift of [-cycleBeats, 0, cycleBeats]) {
         const start = f.throwBeat + shift;
-        const land = start + Math.max(f.value - DWELL_BEATS, 0.45);
+        const land = start + airtimeOf(f.value);
         if (land <= tt && land > bestLand) {
           bestLand = land;
           const x1 = f.fromRight ? HAND_X : -HAND_X;

@@ -1,4 +1,4 @@
-import { DWELL_BEATS, apexScale, type Planet, type Prop, type PropPosition } from "./engine";
+import { airtimeOf, apexScale, type Planet, type Prop, type PropPosition } from "./engine";
 
 // ── Synchronous siteswap ─────────────────────────────────────────────────────
 //
@@ -250,7 +250,7 @@ export function sampleSyncAt(
     for (const f of orbit) {
       for (const shift of [-cycleBeats, 0, cycleBeats]) {
         const start = f.throwBeat + shift;
-        const air = Math.max(f.value - DWELL_BEATS, 0.45);
+        const air = airtimeOf(f.value);
         if (tt >= start && tt < start + air) {
           const p = (tt - start) / air;
           const x1 = f.fromRight ? HAND_X : -HAND_X;
@@ -276,7 +276,7 @@ export function sampleSyncAt(
     for (const f of orbit) {
       for (const shift of [-cycleBeats, 0, cycleBeats]) {
         const start = f.throwBeat + shift;
-        const land = start + Math.max(f.value - DWELL_BEATS, 0.45);
+        const land = start + airtimeOf(f.value);
         if (land <= tt && land > bestLand) {
           bestLand = land;
           const x1 = f.fromRight ? HAND_X : -HAND_X;
