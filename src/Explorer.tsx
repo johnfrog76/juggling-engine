@@ -64,7 +64,7 @@ const useFigureStyles = makeStyles({
    * Rotate before the offset: transforms apply right to left, so rotating last
    * spins the already-displaced position instead of the club itself.
    */
-  propHeldClub: { position: "absolute", transform: "translate(-50%, 50%) rotate(180deg) translateY(34px)" },
+  propHeldClub: { position: "absolute", transform: "translate(-50%, 50%) rotate(180deg) translateY(52px)" },
 });
 
 function LiveFigure({
