@@ -22,6 +22,38 @@
         margin: 0;
         background: #131022;
         color: #eae6f6;
+        /* Tells the browser to render its OWN chrome dark -- scrollbars, form
+           controls, the overscroll gutter. FluentProvider themes the components
+           it renders and cannot reach any of that, so without this line a dark
+           page gets a light scrollbar down the side of it. */
+        color-scheme: dark;
+      }
+
+      /* PORTALS TOO. Fluent renders its overlay drawer into a portal outside
+         #root, so a rule scoped to html/body never reaches the panel's own
+         scroll container -- which is exactly where a light scrollbar showed up
+         on a dark drawer. Applying the scheme to everything covers it. */
+      * {
+        color-scheme: dark;
+      }
+
+      /* WebKit still wants explicit colours: `color-scheme` alone leaves Chrome
+         with its default scrollbar on some platforms. Tuned to the panel and
+         border tokens so the bar reads as part of the page. */
+      ::-webkit-scrollbar {
+        width: 12px;
+        height: 12px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #131022;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #282344;
+        border-radius: 6px;
+        border: 3px solid #131022;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #3a3358;
       }
     </style>
   </head>
