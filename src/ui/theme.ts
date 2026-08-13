@@ -103,8 +103,11 @@ export interface ArtTheme {
    * enough to stay out of the way (John). It also happens to be the right
    * colour for a grey alien.
    *
-   * A pale grey read as near-white and pulled focus off the figure; #666 sits
-   * back where a prop should.
+   * The range was walked in both directions. A pale grey read as near-white
+   * and pulled focus off the figure; #333 went too far the other way and
+   * vanished into the dark stage, which matters most in MOTION -- a prop that
+   * is hard to see standing still is impossible to follow mid-flight. #666 is
+   * the value that stays legible while still sitting back.
    */
   alienProp: string;
 }
