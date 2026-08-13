@@ -94,6 +94,19 @@ export interface ArtTheme {
    * The one avatar that changes what the props look like.
    */
   alien: string;
+  /**
+   * The alien's PROPS: a pale GREY, not another green.
+   *
+   * At one flat green the clubs disappeared into the figure holding them --
+   * same hue, near enough the same value. A brighter green fixed the contrast
+   * and left two greens competing; grey separates cleanly and is neutral
+   * enough to stay out of the way (John). It also happens to be the right
+   * colour for a grey alien.
+   *
+   * A pale grey read as near-white and pulled focus off the figure; #666 sits
+   * back where a prop should.
+   */
+  alienProp: string;
 }
 
 export const nightArt: ArtTheme = {
@@ -114,6 +127,7 @@ export const nightArt: ArtTheme = {
   brassDeep: "#6a4f28",
   eye: "#7fd4e8",
   alien: "#5fbf7d",
+  alienProp: "#666666",
 };
 
 /**

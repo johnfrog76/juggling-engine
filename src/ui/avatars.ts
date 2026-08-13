@@ -9,7 +9,12 @@ export const AVATARS = ["hands", "figure", "robot", "alien"] as const;
 
 export type Avatar = (typeof AVATARS)[number];
 
-/** Does this avatar override the prop colour? Only the alien does. */
-export function propColorFor(avatar: Avatar, fallback: string, alien: string): string {
-  return avatar === "alien" ? alien : fallback;
+/**
+ * Does this avatar override the prop colour? Only the alien does.
+ *
+ * Pass the alien's PROP green rather than its body green: at one flat value the
+ * clubs vanished into the figure holding them.
+ */
+export function propColorFor(avatar: Avatar, fallback: string, alienProp: string): string {
+  return avatar === "alien" ? alienProp : fallback;
 }

@@ -263,7 +263,7 @@ function LiveFigure({
                 key={i}
                 d={arcFor(i)}
                 fill="none"
-                stroke={propColorFor(avatar, art.prop, art.alien)}
+                stroke={propColorFor(avatar, art.prop, art.alienProp)}
                 strokeWidth="1.5"
                 opacity={0.3 - (i % 3) * 0.07}
                 strokeLinecap="round"
@@ -291,7 +291,13 @@ function LiveFigure({
               bottom: -p.y,
             }}
           >
-            <PropGlyph prop={prop} size={prop === "rings" ? 26 : 18} color={art.prop} view="front" spin={p.spin} />
+            <PropGlyph
+              prop={prop}
+              size={prop === "rings" ? 26 : 18}
+              color={propColorFor(avatar, art.prop, art.alienProp)}
+              view="front"
+              spin={p.spin}
+            />
           </div>
         ))}
       </div>
