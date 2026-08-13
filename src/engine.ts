@@ -483,6 +483,13 @@ export function sampleAt(
           return {
             x: x1 + (x2 - x1) * p,
             y: -4 * apex * p * (1 - p),
+            // A REVERSE FLIP IS A DIFFERENT TRICK (John), and a juggler reads
+            // a club spinning against its own arc as one immediately -- so the
+            // sign here is not cosmetic.
+            //
+            // It flipped twice: once because it was genuinely inverted, and
+            // once more when the glyph itself was rotated upright in its SVG,
+            // which reverses which way the same angle reads.
             spin: spins * 360 * p * (f.fromRight ? 1 : -1),
             airborne: true,
           };

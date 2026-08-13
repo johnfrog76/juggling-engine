@@ -72,12 +72,21 @@ export function PropGlyph({
   return (
     <div style={{ width: size * 0.62, height: size * 2.3, transform: `rotate(${spin}deg)`, transformOrigin: "50% 72%" }}>
       <svg viewBox="0 0 20 66" style={{ width: "100%", height: "100%", overflow: "visible" }}>
-        {/* body — widest a third down from the top, tapering into the handle */}
-        <path d="M 10 1 Q 17.5 13 16.5 31 L 13.5 47 Q 12.6 52 10 52 Q 7.4 52 6.5 47 L 3.5 31 Q 2.5 13 10 1 Z" fill={color} />
-        {/* handle */}
-        <rect x="7.6" y="49" width="4.8" height="12" rx="2.4" fill={color} opacity={0.9} />
-        {/* knob — the balance-point end, and the read that fixes orientation */}
-        <circle cx="10" cy="62.5" r="3.6" fill={color} />
+        {/* ROTATED IN THE SVG, not by the caller (John).
+            The club was drawn body-at-top with the knob at the bottom, so every
+            caller holding one had to add its own rotate(180deg) and then a
+            compensating offset to undo the pivot shift -- two magic numbers per
+            call site, tuned separately, drifting apart. Turning the artwork
+            once here means the glyph is simply the right way up: handle down
+            where a hand grips it, body standing above. */}
+        <g transform="rotate(180 10 33)">
+          {/* body — widest a third down from the top, tapering into the handle */}
+          <path d="M 10 1 Q 17.5 13 16.5 31 L 13.5 47 Q 12.6 52 10 52 Q 7.4 52 6.5 47 L 3.5 31 Q 2.5 13 10 1 Z" fill={color} />
+          {/* handle */}
+          <rect x="7.6" y="49" width="4.8" height="12" rx="2.4" fill={color} opacity={0.9} />
+          {/* knob — the balance-point end, and the read that fixes orientation */}
+          <circle cx="10" cy="62.5" r="3.6" fill={color} />
+        </g>
       </svg>
     </div>
   );
