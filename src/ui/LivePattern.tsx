@@ -24,7 +24,7 @@ import { Juggler } from "./Juggler";
  *   BALLS  centre on the hand. A ball is gripped around its middle.
  *   RINGS  hang a little below centre: a held ring rests IN the hand rather
  *          than being balanced on it, so centring reads a touch high.
- *   CLUBS  hang by the HANDLE, about 40px below where centring puts them, and
+ *   CLUBS  hang by the HANDLE, about 20px below where centring puts them, and
  *          flipped 180 degrees -- the glyph is drawn body-up for flight, which
  *          in the hand means the fat end in the palm and the handle in the air.
  *          Backwards.
@@ -34,7 +34,11 @@ import { Juggler } from "./Juggler";
  */
 function heldTransform(prop: Prop, airborne: boolean): string {
   if (airborne) return "translate(-50%, 50%)";
-  if (prop === "clubs") return "translate(-50%, 50%) translateY(40px) rotate(180deg)";
+  // ORDER MATTERS. Transforms apply right-to-left, so rotating BEFORE the
+  // offset turns the club about its own centre and then shifts it down --
+  // putting `rotate` last spun the already-displaced position instead and hung
+  // the club well below the hand.
+  if (prop === "clubs") return "translate(-50%, 50%) rotate(180deg) translateY(20px)";
   if (prop === "rings") return "translate(-50%, 50%) translateY(6px)";
   return "translate(-50%, 50%)";
 }
@@ -80,11 +84,24 @@ export function LivePattern({
             style={{
               position: "absolute",
               left: side * 64,
-              bottom: 0,
+              // THE BOWL SITS ON THE THROW LINE, not the wrist. The cup's
+              // interior is drawn near the BOTTOM of the hand's own box, so
+              // anchoring at bottom:0 put the bowl at the floor of the layer
+              // and left the ball hanging under the hand instead of resting in
+              // it. Raising it seats the prop where a hand would actually hold
+              // it. Sketching a body over the top settles both numbers: the
+              // hands sit at chest height, and at 44 they were about 15% larger
+              // than a figure that size would have (John).
+              // PER PROP, because the hand itself changes shape with the prop. The
+              // palms-up CUP for balls and rings has its bowl near the bottom of the
+              // hand's box; the gripped FIST for clubs is a block that sits lower
+              // still, so one shared offset put the clubs floating above their fists
+              // with the fists below the throw line.
+              bottom: prop === "clubs" ? -12 : -34,
               transform: `translateX(-50%) scaleX(${side})`,
             }}
           >
-            <GraphicHand side={side < 0 ? "left" : "right"} prop={prop} size={46} color={art.body} />
+            <GraphicHand side={side < 0 ? "left" : "right"} prop={prop} size={38} color={art.body} />
           </div>
         ))}
         {(sim?.positions ?? []).map((p, i) => (
