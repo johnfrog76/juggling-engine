@@ -32,8 +32,15 @@ import { Juggler } from "./Juggler";
 const useFigureStyles = makeStyles({
   /** Block hand, palms-up props. The cup's bowl sits on the throw line. */
   handCup: { position: "absolute", bottom: "-34px" },
-  /** Block hand, gripped props. The fist is a lower block than the cup. */
-  handFist: { position: "absolute", bottom: "-12px" },
+  /**
+   * Block hand, gripped props.
+   *
+   * The fist is a lower, tighter block than the palms-up cup, so the two
+   * hands need genuinely different offsets to put the prop where the hand
+   * closes on it. Tuned against the render: -48 dropped the fists below the
+   * throw line and left the clubs floating free above them.
+   */
+  handFist: { position: "absolute", bottom: "-4px" },
   /** A prop in flight: centred on its coordinates. */
   propFlying: { position: "absolute", transform: "translate(-50%, 50%)" },
   /** Held ball: gripped around its middle, so also centred. */
