@@ -1,4 +1,5 @@
 import { palmsUpFor, type Prop } from "../engine";
+import type { Avatar } from "./avatars";
 import { art } from "./theme";
 
 /**
@@ -6,8 +7,10 @@ import { art } from "./theme";
  *
  * Bringing a body in forces a choice that hands alone did not: once there is a
  * figure, it is a *particular* figure, and not everyone wants a stick person.
- * So it is a setting (John) — hands only, a stick figure, a shadow, a robot, or
- * an alien.
+ * So it is a setting (John) — hands only, a stick figure, a robot, or an alien.
+ *
+ * A "shadow" was tried and dropped: it was the same silhouette at lower
+ * opacity, which is a rendering of the figure rather than a different juggler.
  *
  * GEOMETRY IS SHARED AND FIXED. The engine throws from ±64 units around the
  * centreline at hand height, so every avatar must put its hands exactly there.
@@ -16,17 +19,6 @@ import { art } from "./theme";
  * props launch out of empty air beside the body, which is precisely what went
  * wrong when the body was first added.
  */
-
-export const AVATARS = ["hands", "figure", "shadow", "robot", "alien"] as const;
-export type Avatar = (typeof AVATARS)[number];
-
-export const AVATAR_LABELS: Record<Avatar, string> = {
-  hands: "hands",
-  figure: "figure",
-  shadow: "shadow",
-  robot: "robot",
-  alien: "alien",
-};
 
 /** Half the hand span, in engine units. Must match the sampler's HAND_X. */
 const HAND_X = 64;
@@ -98,7 +90,9 @@ export function AvatarFigure({
   // prop layer, so this avatar is simply the absence of a body.
   if (kind === "hands") return null;
 
-  const ink = kind === "shadow" ? `${color}66` : color;
+  // The alien is green all through -- see `alien` in the theme for why the
+  // props change with it.
+  const ink = kind === "alien" ? art.alien : color;
 
   return (
     <svg
@@ -147,7 +141,6 @@ export function AvatarFigure({
         </>
       ) : (
         <>
-          {/* figure and shadow share a silhouette; shadow just runs it fainter */}
           <circle cx="80" cy="20" r="13" fill={ink} />
           <path d="M 80 34 L 80 96" stroke={ink} strokeWidth="15" strokeLinecap="round" />
           <path d="M 80 96 L 66 148" stroke={ink} strokeWidth="12" strokeLinecap="round" />

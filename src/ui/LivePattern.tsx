@@ -17,6 +17,28 @@ import { Juggler } from "./Juggler";
  * height as the hands. Get that wrong and the pattern hangs off to one side of
  * the hands throwing it.
  */
+/**
+ * How a HELD prop sits in the hand — one rule per prop, because they are not
+ * held the same way (John, eyeballing each of them against the figure).
+ *
+ *   BALLS  centre on the hand. A ball is gripped around its middle.
+ *   RINGS  hang a little below centre: a held ring rests IN the hand rather
+ *          than being balanced on it, so centring reads a touch high.
+ *   CLUBS  hang by the HANDLE, about 40px below where centring puts them, and
+ *          flipped 180 degrees -- the glyph is drawn body-up for flight, which
+ *          in the hand means the fat end in the palm and the handle in the air.
+ *          Backwards.
+ *
+ * Airborne props always take the centre anchor: in flight a prop rotates about
+ * its balance point, and the centre is the honest pivot there.
+ */
+function heldTransform(prop: Prop, airborne: boolean): string {
+  if (airborne) return "translate(-50%, 50%)";
+  if (prop === "clubs") return "translate(-50%, 50%) translateY(40px) rotate(180deg)";
+  if (prop === "rings") return "translate(-50%, 50%) translateY(6px)";
+  return "translate(-50%, 50%)";
+}
+
 export function LivePattern({
   pattern,
   prop = "balls",
@@ -72,23 +94,7 @@ export function LivePattern({
               position: "absolute",
               left: p.x,
               bottom: -p.y,
-            // A CLUB IS HELD BY ITS HANDLE (John), so it cannot be anchored
-            // by its centre the way a ball is. Centring put the middle of the
-            // club at hand height, which hangs the knob below the palm and
-            // stands the body up out of it -- the wrong end in the hand.
-            //
-            // A held club is also flipped 180 degrees (John): the glyph is
-            // drawn body-up for flight, which puts the fat end in the palm and
-            // the handle in the air -- backwards. Turning it over puts the
-            // handle in the hand where a juggler actually grips it.
-            //
-            // Airborne clubs keep the centre anchor and their own spin: a club
-            // in flight rotates about its balance point, and the centre is the
-            // honest pivot there.
-              transform:
-                prop === "clubs" && !p.airborne
-                  ? "translate(-50%, 12%) rotate(180deg)"
-                  : "translate(-50%, 50%)",
+            transform: heldTransform(prop, p.airborne),
             }}
           >
             <PropGlyph

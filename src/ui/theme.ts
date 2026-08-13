@@ -86,6 +86,14 @@ export interface ArtTheme {
   brassDeep: string;
   /** His eyes and emitter coils — the one cool light on a warm machine. */
   eye: string;
+  /**
+   * THE ALIEN, and the props it throws.
+   *
+   * Not a skin on the same figure: an alien juggling amber props reads as a
+   * costume, so the whole picture goes green -- body and props together (John).
+   * The one avatar that changes what the props look like.
+   */
+  alien: string;
 }
 
 export const nightArt: ArtTheme = {
@@ -105,6 +113,7 @@ export const nightArt: ArtTheme = {
   brassDark: "#5c3f22",
   brassDeep: "#6a4f28",
   eye: "#7fd4e8",
+  alien: "#5fbf7d",
 };
 
 /**

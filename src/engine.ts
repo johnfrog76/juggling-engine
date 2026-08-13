@@ -622,7 +622,11 @@ export function useSiteswapSim(
 
   useEffect(() => {
     if (!live) {
-      setState(null);
+      // HOLD THE LAST FRAME rather than clearing. A caller that disables the
+      // sim usually wants it FROZEN -- paused for inspection, offscreen,
+      // reduced-motion -- not blanked, and returning null makes the pattern
+      // disappear the instant somebody pauses it. Callers that genuinely want
+      // nothing rendered can ignore the state.
       return;
     }
     // Expand ONCE and sample the expanded pattern. Sampling the raw pattern

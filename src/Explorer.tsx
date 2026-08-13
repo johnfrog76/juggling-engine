@@ -20,12 +20,35 @@ import {
   type Current,
 } from "./patterns";
 import { PropGlyph, GraphicHand } from "./ui/glyphs";
-import { AvatarFigure, AVATARS, type Avatar } from "./ui/Avatar";
+import { AvatarFigure } from "./ui/Avatar";
+import { AVATARS, propColorFor, type Avatar } from "./ui/avatars";
 import { art } from "./ui/theme";
 import { useCompactLayout } from "./ui/useCompactLayout";
 
 
 // ── The stage ───────────────────────────────────────────────────────────────
+
+/**
+ * How a HELD prop sits in the hand — one rule per prop, because they are not
+ * held the same way (John, eyeballing each of them against the figure).
+ *
+ *   BALLS  centre on the hand. A ball is gripped around its middle.
+ *   RINGS  hang a little below centre: a held ring rests IN the hand rather
+ *          than being balanced on it, so centring reads a touch high.
+ *   CLUBS  hang by the HANDLE, about 40px below where centring puts them, and
+ *          flipped 180 degrees -- the glyph is drawn body-up for flight, which
+ *          in the hand means the fat end in the palm and the handle in the air.
+ *          Backwards.
+ *
+ * Airborne props always take the centre anchor: in flight a prop rotates about
+ * its balance point, and the centre is the honest pivot there.
+ */
+function heldTransform(prop: Prop, airborne: boolean): string {
+  if (airborne) return "translate(-50%, 50%)";
+  if (prop === "clubs") return "translate(-50%, 50%) translateY(40px) rotate(180deg)";
+  if (prop === "rings") return "translate(-50%, 50%) translateY(6px)";
+  return "translate(-50%, 50%)";
+}
 
 function LiveFigure({
   current,
@@ -35,6 +58,7 @@ function LiveFigure({
   fill = false,
   avatar = "figure",
   trails = false,
+  paused = false,
 }: {
   current: Current;
   prop: Prop;
@@ -43,6 +67,16 @@ function LiveFigure({
   avatar?: Avatar;
   /** Draw each prop's path as a faint arc behind it. */
   trails?: boolean;
+  /**
+   * Freeze the pattern mid-flight.
+   *
+   * Added because the animation rewrites every prop's transform sixty times a
+   * second, so a DevTools edit is wiped before you can read it (John: "it
+   * redraws too fast so I can't fix it"). Pausing makes the geometry
+   * inspectable -- and it is genuinely useful anyway, for looking at where a
+   * prop is on a given beat.
+   */
+  paused?: boolean;
   /**
    * Take the height of whatever contains this instead of a fixed number.
    *
@@ -63,7 +97,7 @@ function LiveFigure({
   const sim = useSiteswapSim(vanilla, {
     prop,
     planet,
-    enabled: ALWAYS_LIVE && current.kind === "vanilla",
+    enabled: ALWAYS_LIVE && current.kind === "vanilla" && !paused,
   });
 
   // Same reasoning as the engine's sim hook: key the animation on the pattern's
@@ -72,7 +106,7 @@ function LiveFigure({
 
   const [syncT, setSyncT] = useState(0);
   useEffect(() => {
-    if (current.kind !== "sync") return;
+    if (current.kind !== "sync" || paused) return;
     let raf = 0;
     const started = performance.now();
     const tick = () => {
@@ -82,7 +116,7 @@ function LiveFigure({
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
      
-  }, [current.kind, syncKey]);
+  }, [current.kind, syncKey, paused]);
 
   const positions =
     current.kind === "sync" ? sampleSyncAt(current.beats, syncT, { prop, planet }) : (sim?.positions ?? []);
@@ -96,6 +130,8 @@ function LiveFigure({
   // ARC PATHS. Sampled from the same functions the props use, so a trail can
   // never disagree with the prop riding it. Recomputed only when the pattern,
   // prop or gravity changes -- not per frame.
+  // keyed on content, not identity: `current` is a fresh object every render
+  const currentKey = labelOf(current);
   const arcs = useMemo(() => {
     if (!trails) return [];
     const STEPS = 90;
@@ -118,7 +154,8 @@ function LiveFigure({
         .map((f, i) => `${i === 0 ? "M" : "L"} ${f[k].x.toFixed(1)} ${f[k].y.toFixed(1)}`)
         .join(" "),
     );
-  }, [trails, labelOf(current), prop, planet]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- currentKey IS current, by content
+  }, [trails, currentKey, prop, planet]);
   const arcFor = (i: number) => arcs[i] ?? "";
 
   const boxRef = useRef<HTMLDivElement | null>(null);
@@ -201,7 +238,7 @@ function LiveFigure({
                 key={i}
                 d={arcFor(i)}
                 fill="none"
-                stroke={art.prop}
+                stroke={propColorFor(avatar, art.prop, art.alien)}
                 strokeWidth="1.5"
                 opacity={0.3 - (i % 3) * 0.07}
                 strokeLinecap="round"
@@ -216,23 +253,7 @@ function LiveFigure({
               position: "absolute",
               left: p.x,
               bottom: -p.y,
-            // A CLUB IS HELD BY ITS HANDLE (John), so it cannot be anchored
-            // by its centre the way a ball is. Centring put the middle of the
-            // club at hand height, which hangs the knob below the palm and
-            // stands the body up out of it -- the wrong end in the hand.
-            //
-            // A held club is also flipped 180 degrees (John): the glyph is
-            // drawn body-up for flight, which puts the fat end in the palm and
-            // the handle in the air -- backwards. Turning it over puts the
-            // handle in the hand where a juggler actually grips it.
-            //
-            // Airborne clubs keep the centre anchor and their own spin: a club
-            // in flight rotates about its balance point, and the centre is the
-            // honest pivot there.
-              transform:
-                prop === "clubs" && !p.airborne
-                  ? "translate(-50%, 12%) rotate(180deg)"
-                  : "translate(-50%, 50%)",
+            transform: heldTransform(prop, p.airborne),
             }}
           >
             <PropGlyph prop={prop} size={prop === "rings" ? 26 : 18} color={art.prop} view="front" spin={p.spin} />
@@ -299,6 +320,7 @@ export function Explorer() {
   const [drawer, setDrawer] = useState(!compact);
   const [avatar, setAvatar] = useState<Avatar>("figure");
   const [trails, setTrails] = useState(false);
+  const [paused, setPaused] = useState(false);
 
   // `current` is rebuilt on every keystroke but is usually equivalent; its
   // label is the stable identity.
@@ -480,11 +502,18 @@ export function Explorer() {
       </div>
 
       {/* "view arc should be a setting - a checkbox" (John) */}
-      <Checkbox
-        checked={trails}
-        onChange={(_, d) => setTrails(!!d.checked)}
-        label={<span style={{ fontFamily: art.mono, fontSize: "0.85rem", color: art.text }}>show arcs</span>}
-      />
+      <div style={{ display: "flex", gap: "1.4rem", flexWrap: "wrap" }}>
+        <Checkbox
+          checked={trails}
+          onChange={(_, d) => setTrails(!!d.checked)}
+          label={<span style={{ fontFamily: art.mono, fontSize: "0.85rem", color: art.text }}>show arcs</span>}
+        />
+        <Checkbox
+          checked={paused}
+          onChange={(_, d) => setPaused(!!d.checked)}
+          label={<span style={{ fontFamily: art.mono, fontSize: "0.85rem", color: art.text }}>pause</span>}
+        />
+      </div>
     </>
   );
 
@@ -535,7 +564,7 @@ export function Explorer() {
           overflow: "hidden",
         }}
       >
-        <LiveFigure current={current} prop={prop} planet={planet} height={0} fill avatar={avatar} trails={trails} />
+        <LiveFigure current={current} prop={prop} planet={planet} height={0} fill avatar={avatar} trails={trails} paused={paused} />
         {/* WHEN THE PANEL IS SHUT, THIS IS THE WAY BACK (John). Closing the
             drawer gives the pattern the whole frame, so the only affordance
             left has to be unmissable -- a big gear floating over the stage. */}
