@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Juggling Engine — read siteswap without learning to read siteswap</title>
+    <meta
+      name="description"
+      content="Siteswap describes juggling patterns as numbers. Most jugglers cannot read it. This reads it for you: type a pattern and watch it run, every arc solved from the notation."
+    />
+    <meta property="og:title" content="Juggling Engine" />
+    <meta
+      property="og:description"
+      content="Type a siteswap and watch it run. Every arc solved from the notation, not looked up."
+    />
+    <meta property="og:type" content="website" />
+    <style>
+      /* Painted before React mounts so there is never a white flash — the whole
+         thing is a dark stage and a flash of white reads as a broken page. */
+      html,
+      body {
+        margin: 0;
+        background: #131022;
+        color: #eae6f6;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
