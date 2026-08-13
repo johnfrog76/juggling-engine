@@ -96,6 +96,8 @@ export function AvatarFigure({
 
   return (
     <svg
+      data-je="avatar"
+      data-avatar={kind}
       viewBox="0 0 160 150"
       style={{
         position: "absolute",

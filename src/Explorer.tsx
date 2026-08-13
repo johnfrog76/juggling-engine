@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Button,
   Checkbox,
+  makeStyles,
   DrawerBody,
   DrawerHeader,
   DrawerHeaderTitle,
@@ -9,7 +10,7 @@ import {
   OverlayDrawer,
 } from "@fluentui/react-components";
 import { DismissRegular, SettingsRegular } from "@fluentui/react-icons";
-import { useSiteswapSim, ALWAYS_LIVE, expand, validate, orbitsOf, sampleAt, type Planet, type Prop } from "./engine";
+import { useSiteswapSim, ALWAYS_LIVE, expand, validate, orbitsOf, sampleAt, palmsUpFor, type Planet, type Prop } from "./engine";
 import { formatSync, sampleSyncAt, parseSync, validateSync, syncOrbits } from "./sync";
 import {
   CATALOGUE,
@@ -29,30 +30,35 @@ import { useCompactLayout } from "./ui/useCompactLayout";
 // ── The stage ───────────────────────────────────────────────────────────────
 
 /**
- * How a HELD prop sits in the hand — one rule per prop, because they are not
- * held the same way (John, eyeballing each of them against the figure).
+ * FIGURE POSITIONING, in Griffel rather than inline (John).
  *
- *   BALLS  centre on the hand. A ball is gripped around its middle.
- *   RINGS  hang a little below centre: a held ring rests IN the hand rather
- *          than being balanced on it, so centring reads a touch high.
- *   CLUBS  hang by the HANDLE, about 20px below where centring puts them, and
- *          flipped 180 degrees -- the glyph is drawn body-up for flight, which
- *          in the hand means the fat end in the palm and the handle in the air.
- *          Backwards.
+ * These offsets were all eyeballed against the render, so they get tuned again
+ * -- and an inline style on a generated div is unfindable in DevTools and gets
+ * rewritten every frame by the animation. As classes they are one rule in the
+ * inspector, and the class name says what each number is FOR.
  *
- * Airborne props always take the centre anchor: in flight a prop rotates about
- * its balance point, and the centre is the honest pivot there.
+ * Only `left` and `bottom` for a prop stay inline: those change per frame and
+ * are the simulation's output, not a design decision.
  */
-function heldTransform(prop: Prop, airborne: boolean): string {
-  if (airborne) return "translate(-50%, 50%)";
-  // ORDER MATTERS. Transforms apply right-to-left, so rotating BEFORE the
-  // offset turns the club about its own centre and then shifts it down --
-  // putting `rotate` last spun the already-displaced position instead and hung
-  // the club well below the hand.
-  if (prop === "clubs") return "translate(-50%, 50%) rotate(180deg) translateY(20px)";
-  if (prop === "rings") return "translate(-50%, 50%) translateY(6px)";
-  return "translate(-50%, 50%)";
-}
+const useFigureStyles = makeStyles({
+  /** Block hand, palms-up props. The cup's bowl sits on the throw line. */
+  handCup: { position: "absolute", bottom: "-34px" },
+  /** Block hand, gripped props. The fist is a lower block than the cup. */
+  handFist: { position: "absolute", bottom: "-12px" },
+  /** A prop in flight: centred on its coordinates. */
+  propFlying: { position: "absolute", transform: "translate(-50%, 50%)" },
+  /** Held ball: gripped around its middle, so also centred. */
+  propHeldBall: { position: "absolute", transform: "translate(-50%, 50%)" },
+  /** Held ring: rests IN the hand, so it hangs slightly below centre. */
+  propHeldRing: { position: "absolute", transform: "translate(-50%, 50%) translateY(6px)" },
+  /**
+   * Held club: hangs by the HANDLE and flipped, because the glyph is drawn
+   * body-up for flight -- which in the hand puts the fat end in the palm.
+   * Rotate before the offset: transforms apply right to left, so rotating last
+   * spins the already-displaced position instead of the club itself.
+   */
+  propHeldClub: { position: "absolute", transform: "translate(-50%, 50%) rotate(180deg) translateY(34px)" },
+});
 
 function LiveFigure({
   current,
@@ -162,6 +168,7 @@ function LiveFigure({
   }, [trails, currentKey, prop, planet]);
   const arcFor = (i: number) => arcs[i] ?? "";
 
+  const fs = useFigureStyles();
   const boxRef = useRef<HTMLDivElement | null>(null);
   const [measured, setMeasured] = useState(0);
   useEffect(() => {
@@ -219,22 +226,17 @@ function LiveFigure({
           [-1, 1].map((side) => (
             <div
               key={side}
+              // STABLE HOOKS FOR TUNING. These positions are eyeballed against
+              // the render, so they need to be findable in DevTools -- an
+              // inline style on a generated div is not. Select
+              // `[data-je="hand"][data-prop="clubs"]` and the offset is one
+              // rule away.
+              data-je="hand"
+              data-side={side < 0 ? "left" : "right"}
+              data-prop={prop}
+              className={palmsUpFor(prop) ? fs.handCup : fs.handFist}
               style={{
-                position: "absolute",
                 left: side * 64,
-                // THE BOWL SITS ON THE THROW LINE, not the wrist. The cup's
-                // interior is drawn near the bottom of the hand's own box, so
-                // anchoring at 0 put the bowl at the floor of the layer and
-                // left the ball hanging under the hand. Sketching a body over
-                // the top settled the rest: the hands sit at chest height, and
-                // at 44 they were about 15% larger than a figure that size
-                // would have (John).
-                // PER PROP, because the hand itself changes shape with the prop. The
-                // palms-up CUP for balls and rings has its bowl near the bottom of the
-                // hand's box; the gripped FIST for clubs is a block that sits lower
-                // still, so one shared offset put the clubs floating above their fists
-                // with the fists below the throw line.
-                bottom: prop === "clubs" ? -12 : -34,
                 transform: `translateX(-50%) scaleX(${side})`,
               }}
             >
@@ -265,11 +267,21 @@ function LiveFigure({
         {positions.map((p, i) => (
           <div
             key={i}
+            data-je="prop"
+            data-prop={prop}
+            data-held={p.airborne ? "false" : "true"}
+            className={
+              p.airborne
+                ? fs.propFlying
+                : prop === "clubs"
+                  ? fs.propHeldClub
+                  : prop === "rings"
+                    ? fs.propHeldRing
+                    : fs.propHeldBall
+            }
             style={{
-              position: "absolute",
               left: p.x,
               bottom: -p.y,
-            transform: heldTransform(prop, p.airborne),
             }}
           >
             <PropGlyph prop={prop} size={prop === "rings" ? 26 : 18} color={art.prop} view="front" spin={p.spin} />
