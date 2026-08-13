@@ -37,8 +37,8 @@ const useFigureStyles = makeStyles({
    *
    * The fist is a lower, tighter block than the palms-up cup, so the two
    * hands need genuinely different offsets to put the prop where the hand
-   * closes on it. Tuned against the render: -48 dropped the fists below the
-   * throw line and left the clubs floating free above them.
+   * closes on it. -4 sits the fist on the throw line; -38 and -48 both drop
+   * it below and leave the clubs floating free above.
    */
   handFist: { position: "absolute", bottom: "-4px" },
   /** A prop in flight: centred on its coordinates. */
