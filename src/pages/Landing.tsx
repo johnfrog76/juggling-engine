@@ -3,6 +3,7 @@ import { ArrowRightRegular } from "@fluentui/react-icons";
 import { art } from "../ui/theme";
 import { Automaton } from "../ui/Automaton";
 import { LivePattern } from "../ui/LivePattern";
+import { Checks } from "../ui/Checks";
 
 /**
  * The story page.
@@ -277,7 +278,7 @@ export function Landing() {
         {/* ── see it ───────────────────────────────────────────────────── */}
         <section className={s.sectionWide}>
           <h2 className={s.h2}>Three balls, and the beat under them</h2>
-          <LivePattern pattern={[3]} height={200} propSize={24} />
+          <LivePattern pattern={[3]} height={260} propSize={24} />
           <div className={s.proseSingle} style={{ marginTop: "20px" }}>
             <p>
               That is <code>3</code>, solved rather than drawn. Every arc on screen has a real
@@ -289,6 +290,22 @@ export function Landing() {
                 Get the juggling engine
               </Button>
             </div>
+          </div>
+        </section>
+
+        {/* ── the guarantee, checkable ─────────────────────────────────── */}
+        <section className={s.section}>
+          <h2 className={s.h2}>Does it actually work?</h2>
+          <div>
+            <div className={s.proseSingle} style={{ marginBottom: "20px" }}>
+              <p>
+                The claim is narrow and testable: <strong>if it renders, the maths says it is a
+                valid pattern, and if it is a valid vanilla pattern, it renders.</strong> Both
+                directions are checked — the second by brute force over all 670 legal patterns up
+                to period four.
+              </p>
+            </div>
+            <Checks />
           </div>
         </section>
 

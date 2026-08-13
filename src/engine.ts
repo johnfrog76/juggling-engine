@@ -159,6 +159,28 @@ export type Planet = keyof typeof GRAVITY;
 // Deferred — it changes every call site's geometry, so not mid-QA.
 const APEX_PER_BEAT2_EARTH = 11.5;
 
+/**
+ * A NOTE ON WHY A 3 LOOKS LOW, and why there is no fudge factor here.
+ *
+ * Height goes as the SQUARE of airtime. With a dwell of 1.4 beats a `3` has 1.6
+ * beats of flight and a `7` has 5.6, so a seven's apex is about twelve times a
+ * three's. On screen a three ends up close to the hand line, and John's first
+ * reaction was "I can juggle three like that but most people can't" -- a real
+ * three-ball cascade goes to roughly eye height.
+ *
+ * A minimum apex was tried and reverted. It fixed the picture and broke the
+ * claim: `441` lifted its `1` -- a fast hand-across, not a toss -- into a real
+ * arc, and the whole point of this engine is that every arc is SOLVED rather
+ * than drawn. No toss works that way.
+ *
+ * The honest fix, if it is ever worth doing, is that dwell is not constant: a
+ * juggler holds a low ball proportionally longer than a high one, so a real
+ * three flies higher than a fixed dwell predicts. That means making dwell a
+ * function of throw value, which changes every timing guarantee in this file
+ * and the N-2H tests that rest on them. Worth doing properly or not at all.
+ */
+
+
 export function apexScale(planet: Planet): number {
   return GRAVITY.earth / GRAVITY[planet];
 }

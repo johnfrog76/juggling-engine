@@ -1,4 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Button,
+  DrawerBody,
+  DrawerHeader,
+  DrawerHeaderTitle,
+  InlineDrawer,
+  OverlayDrawer,
+} from "@fluentui/react-components";
+import { DismissRegular, SettingsRegular } from "@fluentui/react-icons";
 import { useSiteswapSim, ALWAYS_LIVE, expand, validate, type Planet, type Prop } from "./engine";
 import { formatSync, sampleSyncAt, parseSync, validateSync } from "./sync";
 import {
@@ -199,8 +208,12 @@ export function Explorer() {
   const [planet, setPlanet] = useState<Planet>("earth");
   const [text, setText] = useState("3");
   const [typedError, setTypedError] = useState<string | null>(null);
-  const [drawer, setDrawer] = useState(false);
+  // OPEN ON DESKTOP, SHUT ON A PHONE. The desktop case is somebody presenting
+  // and driving it live, where a hidden control panel is the wrong default. On
+  // a phone the overlay would cover the pattern on arrival, which is the one
+  // thing worth seeing first.
   const compact = useCompactLayout();
+  const [drawer, setDrawer] = useState(!compact);
 
   // `current` is rebuilt on every keystroke but is usually equivalent; its
   // label is the stable identity.
@@ -408,107 +421,122 @@ export function Explorer() {
     </div>
   );
 
-  // ── COMPACT: the figure owns the screen, the controls come up on demand ──
+  // ── THE STAGE, shared by both layouts ────────────────────────────────────
+  const stage = (
+    <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, minHeight: 0 }}>
+      <div
+        style={{
+          position: "relative",
+          flex: 1,
+          minHeight: 0,
+          border: `1px solid ${art.border}`,
+          borderRadius: 8,
+          background: art.panel,
+          overflow: "hidden",
+        }}
+      >
+        <LiveFigure current={current} prop={prop} planet={planet} height={0} fill />
+        {/* WHEN THE PANEL IS SHUT, THIS IS THE WAY BACK (John). Closing the
+            drawer gives the pattern the whole frame, so the only affordance
+            left has to be unmissable -- a big gear floating over the stage. */}
+        {!drawer && (
+          <Button
+            appearance="subtle"
+            size="large"
+            icon={<SettingsRegular style={{ fontSize: 28 }} />}
+            aria-label="Show patterns and controls"
+            onClick={() => setDrawer(true)}
+            style={{
+              position: "absolute",
+              top: 12,
+              right: 12,
+              minWidth: 52,
+              height: 52,
+              color: art.notation,
+              background: `${art.notation}14`,
+              border: `1px solid ${art.notation}44`,
+            }}
+          />
+        )}
+      </div>
+      {readout}
+    </div>
+  );
+
+  // ── The controls live in a Drawer ─────────────────────────────────────────
   //
-  // A phone cannot show a running pattern AND a control column at a usable
-  // size, and the pattern is the thing worth seeing. So the controls become a
-  // sheet: closed by default, a thumb-height bar to open it, and it slides
-  // over the figure rather than squeezing it.
+  // Fluent's Drawer rather than a hand-rolled sheet (John): it brings the focus
+  // trap, the escape key, the overlay and a dismiss button already built and
+  // already accessible, none of which a bespoke panel gets for free.
+  //
+  // INLINE on desktop, because the talk is presented full screen and driven
+  // live -- the controls have to be visible, not a click away. OVERLAY on a
+  // phone, because there is not room for both and the pattern is the thing
+  // worth seeing.
+  const panel = (
+    <>
+      <DrawerHeader>
+        <DrawerHeaderTitle
+          action={
+            <Button
+              appearance="subtle"
+              aria-label="Close"
+              icon={<DismissRegular />}
+              onClick={() => setDrawer(false)}
+            />
+          }
+        >
+          <span style={{ fontFamily: art.mono, fontSize: "0.95rem", letterSpacing: "0.16em", color: art.notation }}>
+            PATTERNS &amp; CONTROLS
+          </span>
+        </DrawerHeaderTitle>
+      </DrawerHeader>
+      <DrawerBody>
+        <div style={{ display: "flex", flexDirection: "column", gap: "1rem", paddingBottom: "1rem" }}>
+          {controls}
+        </div>
+      </DrawerBody>
+    </>
+  );
+
   if (compact) {
     return (
-      <div style={{ position: "relative", display: "flex", flexDirection: "column", flex: 1, minHeight: 0, height: "100%", fontFamily: art.mono, color: art.text, overflow: "hidden" }}>
-        <div style={{ position: "relative", flex: 1, minHeight: 0, border: `1px solid ${art.border}`, borderRadius: 8, background: "rgba(8,7,16,0.5)", overflow: "hidden" }}>
-          <LiveFigure current={current} prop={prop} planet={planet} height={0} fill />
-        </div>
-        {readout}
-
-        {/* the handle -- always reachable, states what it opens */}
-        <button
-          onClick={() => setDrawer((d) => !d)}
-          aria-expanded={drawer}
-          style={{
-            marginTop: "0.6rem",
-            minHeight: 48,
-            width: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "0.6rem",
-            cursor: "pointer",
-            borderRadius: 6,
-            border: `1px solid ${art.notation}55`,
-            background: `${art.notation}12`,
-            color: art.notation,
-            fontFamily: art.mono,
-            fontSize: "0.95rem",
-            fontWeight: 700,
-            letterSpacing: "0.16em",
-          }}
+      <div
+        style={{
+          position: "relative",
+          display: "flex",
+          flexDirection: "column",
+          flex: 1,
+          minHeight: 0,
+          height: "100%",
+          fontFamily: art.mono,
+          color: art.text,
+        }}
+      >
+        {stage}
+        <OverlayDrawer
+          open={drawer}
+          position="bottom"
+          onOpenChange={(_, d) => setDrawer(d.open)}
+          style={{ height: "82vh", background: art.bg, borderTop: `1px solid ${art.notation}55` }}
         >
-          {drawer ? "CLOSE" : "PATTERNS & CONTROLS"}
-        </button>
-
-        {/* the sheet itself */}
-        <div
-          style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            bottom: 0,
-            maxHeight: "82%",
-            overflowY: "auto",
-            WebkitOverflowScrolling: "touch",
-            display: "flex",
-            flexDirection: "column",
-            gap: "1.2rem",
-            padding: "1rem 1rem 1.2rem",
-            borderTop: `1px solid ${art.notation}55`,
-            borderRadius: "12px 12px 0 0",
-            background: "rgba(10,8,20,0.97)",
-            boxShadow: "0 -18px 40px rgba(0,0,0,0.5)",
-            transform: drawer ? "translateY(0)" : "translateY(102%)",
-            transition: "transform 240ms ease",
-            zIndex: 20,
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <div style={{ width: 42, height: 4, borderRadius: 2, background: art.border }} />
-          </div>
-          {controls}
-          <button
-            onClick={() => setDrawer(false)}
-            style={{
-              minHeight: 48,
-              cursor: "pointer",
-              borderRadius: 6,
-              border: `1px solid ${art.border}`,
-              background: "transparent",
-              color: art.text,
-              fontFamily: art.mono,
-              fontSize: "0.9rem",
-              letterSpacing: "0.16em",
-            }}
-          >
-            DONE
-          </button>
-        </div>
+          {panel}
+        </OverlayDrawer>
       </div>
     );
   }
 
-  // ── DESKTOP: both at once, because there is room and John presents live ──
   return (
     <div style={{ display: "flex", gap: "1.5rem", flex: 1, minHeight: 0, height: "100%", fontFamily: art.mono, color: art.text }}>
-      <div style={{ flex: "1 1 40%", display: "flex", flexDirection: "column", minWidth: 0, minHeight: 0 }}>
-        <div style={{ flex: 1, border: `1px solid ${art.border}`, borderRadius: 8, background: "rgba(8,7,16,0.5)", overflow: "hidden" }}>
-          <LiveFigure current={current} prop={prop} planet={planet} height={0} fill />
-        </div>
-        {readout}
-      </div>
-
-      <div style={{ flex: "1 1 56%", display: "flex", flexDirection: "column", gap: "1rem", minWidth: 0, minHeight: 0, overflowY: "auto" }}>
-        {controls}
-      </div>
+      {stage}
+      <InlineDrawer
+        open={drawer}
+        position="end"
+        separator
+        style={{ width: "min(56%, 720px)", background: "transparent", borderLeft: `1px solid ${art.border}` }}
+      >
+        {panel}
+      </InlineDrawer>
     </div>
   );
 }

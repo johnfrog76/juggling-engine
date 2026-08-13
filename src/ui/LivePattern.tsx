@@ -35,6 +35,9 @@ export function LivePattern({
   const peak = Math.max(...expand(pattern), 3);
   const apexPx = 11.5 * Math.pow(Math.max(peak - 1.4, 0.45), 2);
   const fit = Math.min(1, (height - 130) / Math.max(apexPx, 1));
+  // Never let the apex touch the frame: a 3 barely rises, so without a little
+  // reserved air above it the top throw reads as clipped rather than thrown.
+  const headroom = 0.82;
 
   return (
     <Stage height={height}>
@@ -43,7 +46,7 @@ export function LivePattern({
           position: "absolute",
           left: "50%",
           bottom: "14%",
-          transform: `translateX(-50%) scale(${fit})`,
+          transform: `translateX(-50%) scale(${fit * headroom})`,
           transformOrigin: "50% 100%",
         }}
       >
