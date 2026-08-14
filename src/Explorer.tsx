@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Button,
   Checkbox,
-  makeStyles,
   DrawerBody,
   DrawerHeader,
   DrawerHeaderTitle,
@@ -10,7 +9,7 @@ import {
   OverlayDrawer,
 } from "@fluentui/react-components";
 import { DismissRegular, SettingsRegular } from "@fluentui/react-icons";
-import { useSiteswapSim, ALWAYS_LIVE, expand, validate, orbitsOf, sampleAt, palmsUpFor, type Planet, type Prop } from "./engine";
+import { useSiteswapSim, ALWAYS_LIVE, expand, validate, orbitsOf, sampleAt, type Planet, type Prop } from "./engine";
 import { formatSync, sampleSyncAt, parseSync, validateSync, syncOrbits } from "./sync";
 import {
   CATALOGUE,
@@ -20,52 +19,17 @@ import {
   describe,
   type Current,
 } from "./patterns";
-import { PropGlyph, GraphicHand } from "./ui/glyphs";
-import { AvatarFigure } from "./ui/Avatar";
 import { AVATARS, propColorFor, type Avatar } from "./ui/avatars";
+import { PropLayer } from "./ui/PropLayer";
 import { art } from "./ui/theme";
 import { useCompactLayout } from "./ui/useCompactLayout";
 
 
 // ── The stage ───────────────────────────────────────────────────────────────
-
-/**
- * FIGURE POSITIONING, in Griffel rather than inline (John).
- *
- * These offsets were all eyeballed against the render, so they get tuned again
- * -- and an inline style on a generated div is unfindable in DevTools and gets
- * rewritten every frame by the animation. As classes they are one rule in the
- * inspector, and the class name says what each number is FOR.
- *
- * Only `left` and `bottom` for a prop stay inline: those change per frame and
- * are the simulation's output, not a design decision.
- */
-const useFigureStyles = makeStyles({
-  /** Block hand, palms-up props. The cup's bowl sits on the throw line. */
-  handCup: { position: "absolute", bottom: "-34px" },
-  /**
-   * Block hand, gripped props.
-   *
-   * The fist is a lower, tighter block than the palms-up cup, so the two
-   * hands need genuinely different offsets to put the prop where the hand
-   * closes on it. -4 sits the fist on the throw line; -38 and -48 both drop
-   * it below and leave the clubs floating free above.
-   */
-  handFist: { position: "absolute", bottom: "-4px" },
-  /** A prop in flight: centred on its coordinates. */
-  propFlying: { position: "absolute", transform: "translate(-50%, 50%)" },
-  /** Held ball: gripped around its middle, so also centred. */
-  propHeldBall: { position: "absolute", transform: "translate(-50%, 50%)" },
-  /** Held ring: rests IN the hand, so it hangs slightly below centre. */
-  propHeldRing: { position: "absolute", transform: "translate(-50%, 50%) translateY(6px)" },
-  /**
-   * Held club: hangs by the HANDLE and flipped, because the glyph is drawn
-   * body-up for flight -- which in the hand puts the fat end in the palm.
-   * Rotate before the offset: transforms apply right to left, so rotating last
-   * spins the already-displaced position instead of the club itself.
-   */
-  propHeldClub: { position: "absolute", transform: "translate(-50%, 50%)" },
-});
+//
+// The figure itself — avatar, hands, props, every eyeballed offset — lives in
+// ui/PropLayer, shared with the landing page's LivePattern. It was duplicated
+// here and the two copies drifted within a day; see PropLayer's comment.
 
 function LiveFigure({
   current,
@@ -175,7 +139,6 @@ function LiveFigure({
   }, [trails, currentKey, prop, planet]);
   const arcFor = (i: number) => arcs[i] ?? "";
 
-  const fs = useFigureStyles();
   const boxRef = useRef<HTMLDivElement | null>(null);
   const [measured, setMeasured] = useState(0);
   useEffect(() => {
@@ -218,45 +181,26 @@ function LiveFigure({
           background: `radial-gradient(60% 100% at 50% 50%, ${art.floor} 0%, transparent 100%)`,
         }}
       />
-          <div style={{ position: "absolute", left: "50%", bottom: "16%", transform: `translateX(-50%) scale(${fit})`, transformOrigin: "50% 100%" }}>
-        {/* THE AVATAR'S HANDS MUST LAND ON THE REAL HAND LINE. Its box is 150
-            tall with hands drawn at y=74, so it hangs 76 units below the prop
-            layer's origin -- without that offset the body floats above its own
-            hands, which is exactly how it looked when the figure first went in. */}
-        <div style={{ position: "absolute", left: 0, bottom: -76, width: 0 }}>
-          <AvatarFigure kind={avatar} prop={prop} />
-        </div>
-        {/* THE BLOCK HANDS ARE FOR THE HANDS-ONLY VIEW (John). Every other
-            avatar draws its own smaller hands, which belong with the body --
-            the block at figure scale reads as a claw. */}
-        {avatar === "hands" &&
-          [-1, 1].map((side) => (
-            <div
-              key={side}
-              // STABLE HOOKS FOR TUNING. These positions are eyeballed against
-              // the render, so they need to be findable in DevTools -- an
-              // inline style on a generated div is not. Select
-              // `[data-je="hand"][data-prop="clubs"]` and the offset is one
-              // rule away.
-              data-je="hand"
-              data-side={side < 0 ? "left" : "right"}
-              data-prop={prop}
-              className={palmsUpFor(prop) ? fs.handCup : fs.handFist}
-              style={{
-                left: side * 64,
-                transform: `translateX(-50%) scaleX(${side})`,
-              }}
-            >
-              <GraphicHand side={side < 0 ? "left" : "right"} prop={prop} size={38} color={art.body} />
-            </div>
-          ))}
+      <div style={{ position: "absolute", left: "50%", bottom: "16%", transform: `translateX(-50%) scale(${fit})`, transformOrigin: "50% 100%" }}>
         {/* ARC TRAILS, on demand (John: "view arc should be a setting"). Each
             prop's path drawn faintly behind it, graded so three balls each on
-            their own arc do not merge into one wire with beads on it. */}
+            their own arc do not merge into one wire with beads on it.
+
+            THE VIEWBOX FOLLOWS THE APEX. It was a fixed 420 units tall, and a
+            thirteen's apex is about 1500 — every pattern above a seven had its
+            trail sliced off mid-arc while the props sailed on above the cut. */}
         {trails && (
           <svg
-            style={{ position: "absolute", left: -160, bottom: -20, width: 320, height: 420, overflow: "visible", pointerEvents: "none" }}
-            viewBox="-160 -400 320 420"
+            style={{
+              position: "absolute",
+              left: -160,
+              bottom: -20,
+              width: 320,
+              height: apexPx + 60,
+              overflow: "visible",
+              pointerEvents: "none",
+            }}
+            viewBox={`-160 ${-(apexPx + 40)} 320 ${apexPx + 60}`}
           >
             {positions.map((_, i) => (
               <path
@@ -271,35 +215,7 @@ function LiveFigure({
             ))}
           </svg>
         )}
-        {positions.map((p, i) => (
-          <div
-            key={i}
-            data-je="prop"
-            data-prop={prop}
-            data-held={p.airborne ? "false" : "true"}
-            className={
-              p.airborne
-                ? fs.propFlying
-                : prop === "clubs"
-                  ? fs.propHeldClub
-                  : prop === "rings"
-                    ? fs.propHeldRing
-                    : fs.propHeldBall
-            }
-            style={{
-              left: p.x,
-              bottom: -p.y,
-            }}
-          >
-            <PropGlyph
-              prop={prop}
-              size={prop === "rings" ? 26 : 18}
-              color={propColorFor(avatar, art.prop, art.alienProp)}
-              view="front"
-              spin={p.spin}
-            />
-          </div>
-        ))}
+        <PropLayer positions={positions} prop={prop} avatar={avatar} />
       </div>
     </div>
   );
@@ -324,6 +240,7 @@ function Segmented<T extends string>({
           <button
             key={o}
             onClick={() => onChange(o)}
+            aria-pressed={on}
             style={{
               fontFamily: art.mono,
               fontSize: "0.85rem",
@@ -369,11 +286,34 @@ export function Explorer() {
   // eslint-disable-next-line react-hooks/exhaustive-deps -- currentLabel IS current, by content
   const info = useMemo(() => describe(current), [currentLabel]);
 
+  // MOBILE IS FORM OR STAGE, NEVER BOTH (John): "the form itself is pretty
+  // big and the juggling should take up the full experience". So on compact,
+  // making a choice IS asking to watch it -- the tester's words were "if I
+  // click an option I want the settings to close without clicking close".
+  //
+  // Every complete decision dismisses the form: picking a pattern, choosing a
+  // prop, a gravity, an avatar, or pressing Enter on a valid typed pattern.
+  // The two checkboxes and per-keystroke typing do NOT dismiss -- half-typed
+  // input is not a decision yet. Desktop keeps the inline panel open
+  // throughout; there the stage and the controls genuinely coexist.
+  const dismissAfterChoice = () => {
+    if (compact) setDrawer(false);
+  };
+
   const pick = (p: number[] | string) => {
     const c = asCurrent(p);
     setCurrent(c);
     setText(labelOf(c));
     setTypedError(null);
+    // A paused stage showing the OLD pattern's frozen frame under the NEW
+    // pattern's readout is a lie; picking a pattern always means "run it".
+    setPaused(false);
+    dismissAfterChoice();
+  };
+
+  const choose = <T,>(set: (v: T) => void) => (v: T) => {
+    set(v);
+    dismissAfterChoice();
   };
 
   const submit = (raw: string) => {
@@ -446,6 +386,7 @@ export function Explorer() {
               <button
                 key={c.name}
                 onClick={() => pick(c.pattern)}
+                aria-pressed={on}
                 style={{
                   display: "flex",
                   flexDirection: "column",
@@ -494,6 +435,9 @@ export function Explorer() {
         <input
           value={text}
           onChange={(e) => submit(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !typedError) dismissAfterChoice();
+          }}
           spellCheck={false}
           aria-label="siteswap pattern"
           // NUMERIC KEYPAD ON PHONES, but inputMode not type=number: the field
@@ -526,11 +470,11 @@ export function Explorer() {
       <div style={{ display: "flex", flexDirection: compact ? "column" : "row", gap: compact ? "0.8rem" : "1.2rem" }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: "0.72rem", letterSpacing: "0.2em", color: art.muted, marginBottom: "0.5rem" }}>PROP</div>
-          <Segmented options={["balls", "rings", "clubs"] as const} value={prop} onChange={setProp} />
+          <Segmented options={["balls", "rings", "clubs"] as const} value={prop} onChange={choose(setProp)} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: "0.72rem", letterSpacing: "0.2em", color: art.muted, marginBottom: "0.5rem" }}>GRAVITY</div>
-          <Segmented options={["earth", "mars"] as const} value={planet} onChange={setPlanet} />
+          <Segmented options={["earth", "mars"] as const} value={planet} onChange={choose(setPlanet)} />
         </div>
       </div>
 
@@ -539,7 +483,7 @@ export function Explorer() {
           baked into the render. */}
       <div>
         <div style={{ fontSize: "0.72rem", letterSpacing: "0.2em", color: art.muted, marginBottom: "0.5rem" }}>AVATAR</div>
-        <Segmented options={AVATARS} value={avatar} onChange={setAvatar} />
+        <Segmented options={AVATARS} value={avatar} onChange={choose(setAvatar)} />
       </div>
 
       {/* "view arc should be a setting - a checkbox" (John) */}

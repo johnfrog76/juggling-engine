@@ -259,6 +259,12 @@ export function sampleSyncAt(
           // parity carries no information here.
           const x2 = f.cross ? -x1 : x1;
           const apex = apexUnit * air * air;
+          // NOTE: this default spin table is NOT conventionalSpins from
+          // engine.ts -- a sync 4 gets one flip here where a vanilla 4 gets
+          // two. The divergence is historical rather than principled, but the
+          // Box has been verified BY EYE against the real pattern with these
+          // numbers, so unifying the tables changes approved art. Decide
+          // deliberately, with a juggler looking, not in a cleanup pass.
           const spins = prop === "clubs" ? (spinsFor?.(f.value) ?? (f.value <= 2 ? 0 : f.value <= 4 ? 1 : 2)) : 0;
           return {
             x: x1 + (x2 - x1) * p,

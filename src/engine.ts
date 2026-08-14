@@ -499,12 +499,18 @@ export function sampleAt(
     // Held: ease from where it landed toward the hand's next throw.
     let bestLand = -Infinity;
     let heldAt = 0;
+    let lastThrow: number | null = null;
+    let lastFromRight = true;
     for (const f of orbit) {
       for (const shift of [-cycleBeats, 0, cycleBeats]) {
         const start = f.throwBeat + shift;
         const land = start + airtimeOf(f.value);
         if (land <= tt && land > bestLand) {
           bestLand = land;
+          // remember WHICH throw this prop just completed, so a held club can
+          // keep the angle it landed on instead of snapping back to zero
+          lastThrow = f.value;
+          lastFromRight = f.fromRight;
           const x1 = f.fromRight ? HAND_X : -HAND_X;
           heldAt = f.value % 2 === 1 ? -x1 : x1;
         }
@@ -523,10 +529,24 @@ export function sampleAt(
     }
     const span = Math.max(nextThrow - bestLand, 0.001);
     const p = Math.min(Math.max((tt - bestLand) / span, 0), 1);
+    // A HELD CLUB KEEPS THE ANGLE IT LANDED ON.
+    //
+    // Returning 0 looks harmless -- a club sitting in the hand IS upright. But
+    // the flight before it ends at a full multiple of 360, and any consumer
+    // that interpolates between samples (the CSS emitter below, a spring, a
+    // tween) reads the drop to 0 as the club unwinding its whole turn
+    // BACKWARDS through the catch. Holding the completed multiple renders
+    // identically and leaves nothing to undo. Found on the deck's composed
+    // figures, where John saw clubs "bleeding through on the catch"; ported
+    // here so the two samplers agree.
+    const heldSpin =
+      prop === "clubs" && lastThrow !== null
+        ? 360 * (spinsFor?.(lastThrow) ?? conventionalSpins(lastThrow)) * (lastFromRight ? 1 : -1)
+        : 0;
     return {
       x: heldAt + (nextX - heldAt) * p,
       y: 4 * Math.sin(p * Math.PI),
-      spin: 0,
+      spin: heldSpin,
       airborne: false,
     };
   });
@@ -575,7 +595,12 @@ export function toKeyframes(
   pattern: number[],
   opts: SampleOpts & { steps?: number; beatSeconds?: number } = {},
 ): EmittedCss {
-  const { steps = 72, beatSeconds = BEAT_S } = opts;
+  // CLUBS SAMPLE FOUR TIMES AS DENSELY. A ball only translates, and 72 stops
+  // across a cycle is plenty for a smooth parabola; a club also rotates, up to
+  // three turns per throw, and coarse stops leave the interpolator covering
+  // too much angle per step. Only clubs pay the cost — a few KB of CSS, once.
+  const dense = opts.prop === "clubs";
+  const { steps = dense ? 288 : 72, beatSeconds = BEAT_S } = opts;
   const expanded = expand(pattern);
   const { orbits, cycleBeats } = orbitsOf(expanded);
   let css = "";
