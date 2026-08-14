@@ -127,7 +127,13 @@ export function parsePattern(text: string): number[] | null {
   if (/[\s,]/.test(cleaned)) {
     const parts = cleaned.split(/[\s,]+/).filter(Boolean);
     const nums = parts.map((p) => Number(p));
-    return nums.every((n) => Number.isInteger(n) && n >= 0 && n < 100) ? nums : null;
+    // 15 is the ceiling everywhere, not just for bare digits. This path used
+    // to accept up to 99, which let "50," render a fifty-ball fountain --
+    // legal by the permutation and absurd by every other measure (John: "it
+    // is unreasonable to enter 100... absolutely silly"). A 100-throw would
+    // need forty-one seconds of airtime and a two-kilometre apex. The tool's
+    // range is siteswap's alphabet, 0 through f, and one consistent story.
+    return nums.every((n) => Number.isInteger(n) && n >= 0 && n <= 15) ? nums : null;
   }
   // bare digit string, with a..f for 10-15 as siteswap convention allows
   const out: number[] = [];
