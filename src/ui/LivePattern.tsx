@@ -37,7 +37,9 @@ export function LivePattern({
   // Fit the tallest throw into the box we were given.
   const peak = Math.max(...expand(pattern), 3);
   const apexPx = 11.5 * Math.pow(Math.max(peak - 1.4, 0.45), 2);
-  const fit = Math.min(1, (height - 130) / Math.max(apexPx, 1));
+  // Apex plus the body below the hand line — the figure stands on the floor.
+  const bodyDrop = avatar === "hands" ? 40 : 76;
+  const fit = Math.min(1, (height - 60) / Math.max(apexPx + bodyDrop, 1));
   // Never let the apex touch the frame: a 3 barely rises, so without a little
   // reserved air above it the top throw reads as clipped rather than thrown.
   const headroom = 0.82;
@@ -48,7 +50,8 @@ export function LivePattern({
         style={{
           position: "absolute",
           left: "50%",
-          bottom: "14%",
+          // Stage draws its floor at 14%; the hand line sits a body above it.
+          bottom: `calc(14% + ${(bodyDrop * fit * headroom).toFixed(1)}px)`,
           transform: `translateX(-50%) scale(${fit * headroom})`,
           transformOrigin: "50% 100%",
         }}

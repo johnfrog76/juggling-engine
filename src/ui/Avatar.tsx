@@ -65,11 +65,12 @@ function FigureHands({ prop, color }: { prop: Prop; color: string }) {
               d="M 3 4 C 2 15 9 19 16 19 C 23 19 30 15 29 4"
               fill="none"
               stroke={color}
-              strokeWidth="6"
+              // 7, up from 6: the cup read as wire against limbs drawn at 9-15
+              strokeWidth="7"
               strokeLinecap="round"
             />
           ) : (
-            <rect x="7" y="4" width="18" height="15" rx="7" fill={color} />
+            <rect x="6" y="3" width="20" height="17" rx="8" fill={color} />
           )}
         </g>
       ))}

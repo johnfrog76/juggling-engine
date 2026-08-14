@@ -155,7 +155,12 @@ function LiveFigure({
   // scale, exactly as the engine's design note says it should.
   const box = fill ? measured : height;
   const apexPx = 11.5 * Math.pow(Math.max(peak - 1.4, 0.45), 2);
-  const fit = box <= 0 ? 1 : Math.max(0.12, Math.min(1, (box - 120) / Math.max(apexPx, 1)));
+  // The body hangs 76 units below the hand line (feet to hands), 40 for the
+  // hands-only view. It counts against the box alongside the apex, because
+  // the figure now STANDS on the floor rather than dangling through it.
+  const bodyDrop = avatar === "hands" ? 40 : 76;
+  const fit =
+    box <= 0 ? 1 : Math.max(0.12, Math.min(1, (box - 60) / Math.max(apexPx + bodyDrop, 1)));
 
   return (
     // FILL IS ABSOLUTE, not `height: 100%`. The compact layout puts this inside
@@ -176,12 +181,24 @@ function LiveFigure({
           position: "absolute",
           left: 0,
           right: 0,
-          bottom: "16%",
+          bottom: "8%",
           height: 2,
           background: `radial-gradient(60% 100% at 50% 50%, ${art.floor} 0%, transparent 100%)`,
         }}
       />
-      <div style={{ position: "absolute", left: "50%", bottom: "16%", transform: `translateX(-50%) scale(${fit})`, transformOrigin: "50% 100%" }}>
+      {/* FEET ON THE FLOOR. The floor line below is at 8%; the pattern's
+          origin is the HAND line, which sits a body's height above it. It was
+          the other way round — the line drawn at hand height with the figure
+          dangling beneath it like a tightrope act, legs clipped by the frame. */}
+      <div
+        style={{
+          position: "absolute",
+          left: "50%",
+          bottom: `calc(8% + ${(bodyDrop * fit).toFixed(1)}px)`,
+          transform: `translateX(-50%) scale(${fit})`,
+          transformOrigin: "50% 100%",
+        }}
+      >
         {/* ARC TRAILS, on demand (John: "view arc should be a setting"). Each
             prop's path drawn faintly behind it, graded so three balls each on
             their own arc do not merge into one wire with beads on it.
