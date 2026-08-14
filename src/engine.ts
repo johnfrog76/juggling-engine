@@ -119,7 +119,21 @@ export const DWELL_BEATS = 1.4;
  */
 export const DWELL_FRACTION = 0.35;
 
+/**
+ * Dwell for PASSES — the 1s and 2s that cross rather than get tossed.
+ *
+ * These are a different move from a throw: a 1 is a hand-across, a 2x a low
+ * shuttle. When the toss fraction was applied to them the Box's shuttle arced
+ * 4.7x higher than the verified render and the shower's 1 floated -- but a
+ * dead-flat laser is wrong too, because a real pass DOES carry a little lift
+ * (John: "to me it visually has a bit of arc"). 1.2 beats of dwell puts the
+ * 2x at about a 7px rise and the 1 at about 4 -- visible, and nothing like a
+ * throw. Tune THIS number against the Box and the shower, nothing else.
+ */
+export const PASS_DWELL_BEATS = 1.2;
+
 export function airtimeOf(value: number): number {
+  if (value < 3) return Math.max(value - PASS_DWELL_BEATS, 0.55);
   return Math.max(value - Math.min(DWELL_BEATS, DWELL_FRACTION * value), 0.45);
 }
 
