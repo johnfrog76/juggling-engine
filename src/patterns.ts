@@ -184,11 +184,16 @@ export function describe(c: Current) {
  * and the tool should say so exactly when the trap springs, not in a manual.
  */
 export function bigThrowTip(raw: string): string | null {
-  const n = Number(raw.trim());
+  const cleaned = raw.trim();
+  const n = Number(cleaned);
   if (!Number.isInteger(n) || n < 10 || n > 15) return null;
   const letter = String.fromCharCode(87 + n);
-  return `Digits read one at a time — "${raw.trim()}" is the pattern ${raw
-    .trim()
-    .split("")
-    .join(",")}. For a single throw of ${n}, type "${letter}".`;
+  const digits = cleaned.split("").map(Number);
+  // When the digit-reading is a real pattern, notation won and the tip
+  // teaches the letter. When it is not, the explorer already ran the count
+  // the juggler meant -- say so, and teach the letter for next time.
+  if (validate(digits).legal) {
+    return `Digits read one at a time — "${cleaned}" is the pattern ${digits.join(",")}. For a single throw of ${n}, type "${letter}".`;
+  }
+  return `Running a single throw of ${n} — notation writes it "${letter}", since digits read one at a time.`;
 }

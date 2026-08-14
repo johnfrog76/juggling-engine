@@ -362,6 +362,21 @@ export function Explorer() {
     }
     const v = validate(parsed);
     if (!v.legal) {
+      // PATTERN BEATS NOTATION when notation has nothing to offer. A juggler
+      // typing "10" means a ten-ball fountain -- that is how jugglers count --
+      // and the digit-reading 1,0 is not a pattern at all. When the digits are
+      // illegal AND the whole input is a plain 10-15, run the single throw
+      // they meant; bigThrowTip explains what happened. When the digits DO
+      // form a real pattern (13 is the two-ball 1,3), notation wins and the
+      // tip teaches the letter instead. Nothing legal is ever stolen. (John:
+      // "10 would be a fountain pattern -- it is the second digit that throws
+      // it off -- pattern vs notation.")
+      const n = Number(raw.trim());
+      if (Number.isInteger(n) && n >= 10 && n <= 15 && validate([n]).legal) {
+        setTypedError(null);
+        setCurrent({ kind: "vanilla", digits: [n] });
+        return;
+      }
       setTypedError(
         v.collisionAt !== undefined
           ? `Two props would land on beat ${v.collisionAt} at once`
