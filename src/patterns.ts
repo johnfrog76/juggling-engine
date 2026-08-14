@@ -127,12 +127,15 @@ export function parsePattern(text: string): number[] | null {
   if (/[\s,]/.test(cleaned)) {
     const parts = cleaned.split(/[\s,]+/).filter(Boolean);
     const nums = parts.map((p) => Number(p));
-    // 15 is the ceiling everywhere, not just for bare digits. This path used
-    // to accept up to 99, which let "50," render a fifty-ball fountain --
-    // legal by the permutation and absurd by every other measure (John: "it
-    // is unreasonable to enter 100... absolutely silly"). A 100-throw would
-    // need forty-one seconds of airtime and a two-kilometre apex. The tool's
-    // range is siteswap's alphabet, 0 through f, and one consistent story.
+    // 15 is the ceiling everywhere, not just for bare digits — and the number
+    // is calibrated, not arbitrary. "We are playing with numbers where actual
+    // people have thrown 13 rings — and that is why the engine supports this"
+    // (John). Lucas flashed d in 2002; the alphabet runs two past the attested
+    // edge of the craft, which is where the next record would land if one
+    // ever comes. A 100-throw is not silly because of the physics (though a
+    // two-kilometre apex is its own argument) — it is silly because it is
+    // untethered from anything human hands have ever done. This path used to
+    // accept up to 99 and would happily render a fifty-ball fountain.
     return nums.every((n) => Number.isInteger(n) && n >= 0 && n <= 15) ? nums : null;
   }
   // bare digit string, with a..f for 10-15 as siteswap convention allows
