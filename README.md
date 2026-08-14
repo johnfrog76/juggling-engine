@@ -130,7 +130,9 @@ you know what to review as opinion versus report as bug.
   When the digits DO form a legal pattern (`13` → `1,3`, `15` → the shower),
   the digits always win.
 - **Throws cap at `f` (15)** — two past the attested edge of the craft
-  (Lucas's 13-ring flash), where a new record would land if one ever comes.
+  (Lucas's 13-ring flash). The range past the record is the point: the engine
+  renders patterns *just out of reach*, the way a miler stares at the seconds
+  between their time and the record. Nobody chases what they cannot see.
 - **Dwell is modelled, not standard**: 1.4 beats for tosses, shortened for
   throws of 3+ (`DWELL_FRACTION`), and a separate longer dwell for 1s and 2s
   (`PASS_DWELL_BEATS`) so passes stay low with a little lift.
