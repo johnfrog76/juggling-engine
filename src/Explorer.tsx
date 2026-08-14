@@ -41,6 +41,7 @@ function LiveFigure({
   avatar = "figure",
   trails = false,
   paused = false,
+  colored = false,
 }: {
   current: Current;
   prop: Prop;
@@ -49,6 +50,15 @@ function LiveFigure({
   avatar?: Avatar;
   /** Draw each prop's path as a faint arc behind it. */
   trails?: boolean;
+  /**
+   * Give every prop its own colour, cycled from the theme's propColors.
+   *
+   * Promoted from a QA diagnostic (one club painted red to track a single
+   * orbit by eye, John's idea): following ONE prop through the pattern is how
+   * a juggler reads an unfamiliar siteswap, and colour is the cheapest handle
+   * to follow it by. Applies to the trails too, so a prop and its arc agree.
+   */
+  colored?: boolean;
   /**
    * Freeze the pattern mid-flight.
    *
@@ -215,15 +225,19 @@ function LiveFigure({
                 key={i}
                 d={arcFor(i)}
                 fill="none"
-                stroke={propColorFor(avatar, art.prop, art.alienProp)}
+                // Colored mode colours the trail to MATCH its prop — orbit i is
+                // both positions[i] and arcs[i], so the pairing is by index.
+                // A flat opacity there: the hues already separate the arcs,
+                // which is the job the grading was doing.
+                stroke={colored ? art.propColors[i % art.propColors.length] : propColorFor(avatar, art.prop, art.alienProp)}
                 strokeWidth="1.5"
-                opacity={0.3 - (i % 3) * 0.07}
+                opacity={colored ? 0.3 : 0.3 - (i % 3) * 0.07}
                 strokeLinecap="round"
               />
             ))}
           </svg>
         )}
-        <PropLayer positions={positions} prop={prop} avatar={avatar} />
+        <PropLayer positions={positions} prop={prop} avatar={avatar} colors={colored ? art.propColors : undefined} />
       </div>
     </div>
   );
@@ -287,6 +301,7 @@ export function Explorer() {
   const [avatar, setAvatar] = useState<Avatar>("figure");
   const [trails, setTrails] = useState(false);
   const [paused, setPaused] = useState(false);
+  const [colored, setColored] = useState(false);
 
   // `current` is rebuilt on every keystroke but is usually equivalent; its
   // label is the stable identity.
@@ -523,6 +538,11 @@ export function Explorer() {
           onChange={(_, d) => setPaused(!!d.checked)}
           label={<span style={{ fontFamily: art.mono, fontSize: "0.85rem", color: art.text }}>pause</span>}
         />
+        <Checkbox
+          checked={colored}
+          onChange={(_, d) => setColored(!!d.checked)}
+          label={<span style={{ fontFamily: art.mono, fontSize: "0.85rem", color: art.text }}>colored props</span>}
+        />
       </div>
     </>
   );
@@ -574,7 +594,7 @@ export function Explorer() {
           overflow: "hidden",
         }}
       >
-        <LiveFigure current={current} prop={prop} planet={planet} height={0} fill avatar={avatar} trails={trails} paused={paused} />
+        <LiveFigure current={current} prop={prop} planet={planet} height={0} fill avatar={avatar} trails={trails} paused={paused} colored={colored} />
         {/* WHEN THE PANEL IS SHUT, THIS IS THE WAY BACK (John). Closing the
             drawer gives the pattern the whole frame, so the only affordance
             left has to be unmissable -- a big gear floating over the stage. */}

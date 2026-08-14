@@ -69,6 +69,7 @@ export function PropLayer({
   avatar = "figure",
   ringSize = 26,
   propSize = 18,
+  colors,
 }: {
   positions: PropPosition[];
   prop: Prop;
@@ -76,6 +77,12 @@ export function PropLayer({
   /** Rings render larger than their nominal size — see PropGlyph's boost note. */
   ringSize?: number;
   propSize?: number;
+  /**
+   * Per-prop colours, cycled by orbit index ("colored props" setting).
+   * When given, this wins over every default — including the alien's grey,
+   * because an explicit user choice beats an avatar's art direction.
+   */
+  colors?: string[];
 }) {
   const fs = useFigureStyles();
   const propColor = propColorFor(avatar, art.prop, art.alienProp);
@@ -139,7 +146,7 @@ export function PropLayer({
           <PropGlyph
             prop={prop}
             size={prop === "rings" ? ringSize : propSize}
-            color={propColor}
+            color={colors ? colors[i % colors.length] : propColor}
             view="front"
             spin={p.spin}
           />

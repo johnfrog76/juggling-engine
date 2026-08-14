@@ -95,6 +95,16 @@ export interface ArtTheme {
    */
   alien: string;
   /**
+   * PER-PROP COLOURS for the "colored props" setting, cycled by orbit index.
+   *
+   * Born as a QA diagnostic on the deck's slide 22 — one club painted red so a
+   * single prop could be tracked through the whole orbit by eye — and promoted
+   * to a feature (John): being able to follow ONE prop is how a juggler reads
+   * an unfamiliar pattern. Same six as the deck Automaton's LED balls, which
+   * are a real product and already proven legible against the night stage.
+   */
+  propColors: string[];
+  /**
    * The alien's PROPS: a pale GREY, not another green.
    *
    * At one flat green the clubs disappeared into the figure holding them --
@@ -130,6 +140,7 @@ export const nightArt: ArtTheme = {
   brassDeep: "#6a4f28",
   eye: "#7fd4e8",
   alien: "#5fbf7d",
+  propColors: ["#ff5f8f", "#ffb347", "#ffe66d", "#7ee787", "#62e6ff", "#a78bfa"],
   alienProp: "#666666",
 };
 
