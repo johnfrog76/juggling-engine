@@ -115,6 +115,35 @@ npm run shots      # screenshot both pages (dev server must be running)
 `src/engine.ts` and `src/sync.ts` are the product. Everything under `src/ui` and
 `src/pages` exists to present it.
 
+## For siteswap-literate jugglers — review wanted
+
+This engine was validated by a juggler of 46 years who **does not read
+siteswap** — his eye is authoritative on whether the render looks like real
+juggling, and it caught real bugs (club orientation, reverse flips, inflated
+pass arcs). What it cannot certify is notation semantics. If you live in the
+notation, this section is for you: the following are *deliberate* choices, so
+you know what to review as opinion versus report as bug.
+
+- **Bare `10`–`15` runs as a single throw when the digit-reading is illegal.**
+  `"10"` renders a ten-prop fountain, because `1,0` is not a pattern and a
+  juggler typing 10 means a count. Reference tools reject it; we narrate it.
+  When the digits DO form a legal pattern (`13` → `1,3`, `15` → the shower),
+  the digits always win.
+- **Throws cap at `f` (15)** — two past the attested edge of the craft
+  (Lucas's 13-ring flash), where a new record would land if one ever comes.
+- **Dwell is modelled, not standard**: 1.4 beats for tosses, shortened for
+  throws of 3+ (`DWELL_FRACTION`), and a separate longer dwell for 1s and 2s
+  (`PASS_DWELL_BEATS`) so passes stay low with a little lift.
+- **Club spin counts are art direction** (`conventionalSpins`), and the sync
+  path currently uses a *different* table — flagged in `sync.ts`, awaiting a
+  juggler's eye.
+- **The ring side view is a three-quarter read, not a true projection** — see
+  the note in `src/ui/glyphs.tsx` before "fixing" it.
+
+Open an issue for anything else that reads wrong to a notation-native eye —
+especially sync formatting, the multiplex/passing gaps, and edge cases in
+validation.
+
 ## Provenance
 
 Extracted from a talk about juggling as notation, where the engine drives the slides live.
