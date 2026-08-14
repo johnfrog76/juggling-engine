@@ -17,6 +17,7 @@ import {
   labelOf,
   parsePattern,
   describe,
+  bigThrowTip,
   type Current,
 } from "./patterns";
 import { AVATARS, propColorFor, type Avatar } from "./ui/avatars";
@@ -479,7 +480,9 @@ export function Explorer() {
           }}
         />
         <div style={{ marginTop: "0.4rem", fontSize: "0.8rem", lineHeight: 1.5, color: typedError ? art.invalid : art.muted, opacity: typedError ? 1 : 0.7, minHeight: "2.4em" }}>
-          {typedError ?? "Digits are how many beats later that throw lands. Brackets are sync."}
+          {bigThrowTip(text) ??
+            typedError ??
+            "Digits are how many beats later that throw lands — a to f is 10 to 15. Brackets are sync."}
         </div>
       </div>
 

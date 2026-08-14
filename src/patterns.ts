@@ -82,7 +82,7 @@ export const CATALOGUE: NamedPattern[] = [
   { name: "Shower (other way)", pattern: [1, 5], note: "same pattern, other hand doing the work", props: 3 },
   { name: "97531", pattern: [9, 7, 5, 3, 1], note: "a different height every throw", props: 5 },
   { name: "744", pattern: [7, 4, 4], note: "one over the top of two", props: 5 },
-  { name: "Thirteen", pattern: [13], note: "the ring record, flashed", props: 13 },
+  { name: "Thirteen", pattern: [13], note: "the ring record, flashed — thirteen is d", props: 13 },
 ];
 
 // ── One pattern type, two timing modes ──────────────────────────────────────
@@ -105,9 +105,18 @@ export function asCurrent(p: number[] | string): Current {
 }
 
 export function labelOf(c: Current): string {
+  // THROWS ABOVE 9 ARE LETTERS -- a=10 through f=15, the siteswap standard.
+  //
+  // This used to join big digits with spaces, which collided: [13] printed as
+  // "13" and so did [1,3] -- two different patterns, one label. Since the
+  // catalogue highlight, the describe() memo and the text field all key on
+  // this string, typing "13" rendered the two-ball pattern while the
+  // THIRTEEN row lit up as selected (John hit exactly this). Letters make
+  // every label unambiguous and round-trip through parsePattern, which has
+  // always accepted a-f.
   return c.kind === "sync"
     ? formatSync(c.beats)
-    : c.digits.join(c.digits.some((d) => d > 9) ? " " : "");
+    : c.digits.map((d) => (d > 9 ? String.fromCharCode(87 + d) : String(d))).join("");
 }
 
 /** Parse what a person types. Accepts "633", "6 3 3", "6,3,3". */
@@ -162,4 +171,24 @@ export function describe(c: Current) {
     label: labelOf(c),
     sync: false,
   };
+}
+
+/**
+ * The 10-to-15 trap, caught at the moment it happens.
+ *
+ * Digits parse one at a time, so "12" is the two-throw pattern 1,2 — not a
+ * twelve-ball fountain — and "13" is the perfectly legal two-ball 1,3, which
+ * renders while the THIRTEEN row lights up. John walked straight into both:
+ * "if 13 works and I change to 12 why does the text area not accept it?" The
+ * honest answer is siteswap's own convention — throws above 9 are letters —
+ * and the tool should say so exactly when the trap springs, not in a manual.
+ */
+export function bigThrowTip(raw: string): string | null {
+  const n = Number(raw.trim());
+  if (!Number.isInteger(n) || n < 10 || n > 15) return null;
+  const letter = String.fromCharCode(87 + n);
+  return `Digits read one at a time — "${raw.trim()}" is the pattern ${raw
+    .trim()
+    .split("")
+    .join(",")}. For a single throw of ${n}, type "${letter}".`;
 }
