@@ -1,4 +1,4 @@
-import { useSiteswapSim, expand, type Planet, type Prop } from "../engine";
+import { useSiteswapSim, apexPxOf, type Planet, type Prop } from "../engine";
 import { Stage } from "./Stage";
 import { PropLayer } from "./PropLayer";
 import type { Avatar } from "./avatars";
@@ -34,9 +34,9 @@ export function LivePattern({
 }) {
   const sim = useSiteswapSim(pattern, { prop, planet });
 
-  // Fit the tallest throw into the box we were given.
-  const peak = Math.max(...expand(pattern), 3);
-  const apexPx = 11.5 * Math.pow(Math.max(peak - 1.4, 0.45), 2);
+  // Fit the tallest throw into the box we were given — the engine owns the
+  // height, this component owns the room.
+  const apexPx = apexPxOf(pattern, planet);
   // Apex plus the body below the hand line — the figure stands on the floor.
   const bodyDrop = avatar === "hands" ? 40 : 76;
   const fit = Math.min(1, (height - 60) / Math.max(apexPx + bodyDrop, 1));

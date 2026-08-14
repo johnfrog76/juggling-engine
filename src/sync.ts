@@ -309,3 +309,22 @@ export function sampleSyncAt(
 
 /** The Box: two columns up the sides, one prop shuttling across the middle. */
 export const BOX = parseSync("(4,2x)(2x,4)")!;
+
+/**
+ * Sync flight paths, mirroring the vanilla arcPathsOf — engine-owned for the
+ * same reason: a trail must come from the sampler the props ride.
+ */
+export function syncArcPathsOf(
+  beats: SyncBeat[],
+  opts: { planet?: Planet; prop?: Prop; steps?: number } = {},
+): string[] {
+  const { steps = 90 } = opts;
+  const { cycleBeats } = syncOrbits(beats);
+  const frames = Array.from({ length: steps + 1 }, (_, i) =>
+    sampleSyncAt(beats, (i / steps) * cycleBeats, opts),
+  );
+  const n = frames[0]?.length ?? 0;
+  return Array.from({ length: n }, (_, k) =>
+    frames.map((f, i) => `${i === 0 ? "M" : "L"} ${f[k].x.toFixed(1)} ${f[k].y.toFixed(1)}`).join(" "),
+  );
+}

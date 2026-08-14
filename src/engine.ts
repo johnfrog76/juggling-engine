@@ -586,6 +586,48 @@ export function airborneAt(pattern: number[], t: number, planet: Planet = "earth
   return sampleAt(pattern, t, { planet }).filter((p) => p.airborne).length;
 }
 
+/**
+ * Peak height of a pattern's tallest throw, in engine pixels.
+ *
+ * THE ENGINE OWNS THIS NUMBER. Before it was exported, the 11.5 constant and
+ * the dwell arithmetic were hand-copied into every renderer that needed to
+ * fit a pattern into a box -- the Explorer, the landing page, slide layout
+ * maths -- and a re-timing of the engine would have left them all silently
+ * disagreeing about how tall a pattern is. Presentation decides how much
+ * room to give a pattern; the engine decides how much room it needs.
+ */
+export function apexPxOf(pattern: number[], planet: Planet = "earth"): number {
+  const peak = Math.max(...expand(pattern), 3);
+  return APEX_PER_BEAT2_EARTH * apexScale(planet) * Math.pow(airtimeOf(peak), 2);
+}
+
+/**
+ * Every prop's flight path over one full cycle, as SVG path strings.
+ *
+ * The SHAPE of a pattern's path is engine truth, not presentation: it falls
+ * out of the same sampler the props ride, so a drawn trail can never disagree
+ * with the prop on it. UI code used to run its own 90-step sampling loops to
+ * build these -- the arc is now emitted, like the keyframes are.
+ *
+ * Coordinates are in the engine's own space: x around ±64, y negative-up from
+ * the hand line -- which is SVG-ready as-is, since SVG's y grows downward.
+ */
+export function arcPathsOf(
+  pattern: number[],
+  opts: SampleOpts & { steps?: number } = {},
+): string[] {
+  const { steps = 90 } = opts;
+  const expanded = expand(pattern);
+  const { cycleBeats } = orbitsOf(expanded);
+  const frames = Array.from({ length: steps + 1 }, (_, i) =>
+    sampleAt(expanded, (i / steps) * cycleBeats, opts),
+  );
+  const n = frames[0]?.length ?? 0;
+  return Array.from({ length: n }, (_, k) =>
+    frames.map((f, i) => `${i === 0 ? "M" : "L"} ${f[k].x.toFixed(1)} ${f[k].y.toFixed(1)}`).join(" "),
+  );
+}
+
 // ── CSS emission ────────────────────────────────────────────────────────────
 //
 // The same sampler, baked ahead of time into @keyframes.

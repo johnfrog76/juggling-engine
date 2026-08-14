@@ -1,4 +1,4 @@
-import { parseSync, formatSync, validateSync, syncOrbits, sampleSyncAt, BOX } from "./sync";
+import { parseSync, formatSync, validateSync, syncOrbits, sampleSyncAt, syncArcPathsOf, BOX } from "./sync";
 
 // Sync is a SECOND timing mode, not a variation on the first, so it gets its
 // own tests. The claim being defended: if it renders, the maths says it is a
@@ -140,5 +140,13 @@ describe("sampling the Box — the shape John described", () => {
     const sorted = [...peak].sort((a, b) => a - b);
     // y is negative upward: the two columns peak much higher than the shuttle
     expect(sorted[0]).toBeLessThan(sorted[2] - 20);
+  });
+});
+
+describe("sync arcs are engine-owned too", () => {
+  it("emits one path per prop for the Box", () => {
+    const paths = syncArcPathsOf(BOX);
+    expect(paths).toHaveLength(3);
+    for (const p of paths) expect(p).not.toMatch(/NaN|Infinity/);
   });
 });

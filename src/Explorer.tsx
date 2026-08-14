@@ -9,8 +9,8 @@ import {
   OverlayDrawer,
 } from "@fluentui/react-components";
 import { DismissRegular, SettingsRegular } from "@fluentui/react-icons";
-import { useSiteswapSim, ALWAYS_LIVE, expand, validate, orbitsOf, sampleAt, type Planet, type Prop } from "./engine";
-import { formatSync, sampleSyncAt, parseSync, validateSync, syncOrbits } from "./sync";
+import { useSiteswapSim, ALWAYS_LIVE, expand, validate, apexPxOf, arcPathsOf, type Planet, type Prop } from "./engine";
+import { formatSync, sampleSyncAt, parseSync, validateSync, syncArcPathsOf } from "./sync";
 import {
   CATALOGUE,
   asCurrent,
@@ -114,28 +114,14 @@ function LiveFigure({
   // prop or gravity changes -- not per frame.
   // keyed on content, not identity: `current` is a fresh object every render
   const currentKey = labelOf(current);
+  // Arcs are EMITTED by the engine, not sampled here — the UI used to run its
+  // own 90-step loop, which is exactly the kind of engine truth presentation
+  // should never re-derive.
   const arcs = useMemo(() => {
     if (!trails) return [];
-    const STEPS = 90;
-    const cycle =
-      current.kind === "sync"
-        ? syncOrbits(current.beats).cycleBeats
-        : orbitsOf(expand(current.digits)).cycleBeats;
-    const frames = Array.from({ length: STEPS + 1 }, (_, i) => {
-      const tt = (i / STEPS) * cycle;
-      return current.kind === "sync"
-        ? sampleSyncAt(current.beats, tt, { prop, planet })
-        : sampleAt(expand(current.digits), tt, { prop, planet });
-    });
-    const n = frames[0]?.length ?? 0;
-    return Array.from({ length: n }, (_, k) =>
-      frames
-        // SVG y grows downward and the sampler is already negative-up, so the
-        // value passes through unnegated -- negating it flipped the arc under
-        // the hands.
-        .map((f, i) => `${i === 0 ? "M" : "L"} ${f[k].x.toFixed(1)} ${f[k].y.toFixed(1)}`)
-        .join(" "),
-    );
+    return current.kind === "sync"
+      ? syncArcPathsOf(current.beats, { prop, planet })
+      : arcPathsOf(current.digits, { prop, planet });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- currentKey IS current, by content
   }, [trails, currentKey, prop, planet]);
   const arcFor = (i: number) => arcs[i] ?? "";
@@ -155,7 +141,11 @@ function LiveFigure({
   // Fit the tallest throw into the box we were given — the caller passes the
   // scale, exactly as the engine's design note says it should.
   const box = fill ? measured : height;
-  const apexPx = 11.5 * Math.pow(Math.max(peak - 1.4, 0.45), 2);
+  // the engine says how tall the pattern is; this component decides the room
+  const apexPx =
+    current.kind === "sync"
+      ? apexPxOf([peak], planet)
+      : apexPxOf(current.digits, planet);
   // The body hangs 76 units below the hand line (feet to hands), 40 for the
   // hands-only view. It counts against the box alongside the apex, because
   // the figure now STANDS on the floor rather than dangling through it.

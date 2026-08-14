@@ -1,5 +1,7 @@
 import {
   airtimeOf,
+  apexPxOf,
+  arcPathsOf,
   sampleAt,
   expand,
   toKeyframes,
@@ -98,5 +100,25 @@ describe("toKeyframes — the emitted CSS can always be interpolated", () => {
     expect(stops(toKeyframes("t", [7], { prop: "clubs" }).css)).toBeGreaterThan(
       stops(toKeyframes("t", [7], { prop: "balls" }).css),
     );
+  });
+});
+
+describe("the engine owns apex and arcs — presentation never re-derives them", () => {
+  it("apexPxOf reports the tallest throw's height", () => {
+    // 11.5 px per airtime-beat² was hand-copied into three renderers before
+    // this existed; a re-timing would have left them silently disagreeing.
+    expect(apexPxOf([3])).toBeCloseTo(11.5 * Math.pow(airtimeOf(3), 2), 3);
+    expect(apexPxOf([7])).toBeGreaterThan(apexPxOf([5]));
+    // Mars: same throw, weaker pull, 2.64x the apex.
+    expect(apexPxOf([3], "mars") / apexPxOf([3])).toBeCloseTo(9.81 / 3.71, 2);
+  });
+
+  it("arcPathsOf emits one finite SVG path per prop", () => {
+    const paths = arcPathsOf([5, 3, 1]);
+    expect(paths).toHaveLength(3);
+    for (const p of paths) {
+      expect(p.startsWith("M ")).toBe(true);
+      expect(p).not.toMatch(/NaN|Infinity/);
+    }
   });
 });
