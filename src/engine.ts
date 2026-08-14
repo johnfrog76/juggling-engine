@@ -581,10 +581,37 @@ export function toKeyframes(
   let css = "";
   for (let i = 0; i < orbits.length; i++) {
     const stops: string[] = [];
+    // UNWRAPPED ANGLE. The sampler reports each throw's rotation from zero, so
+    // a club that has just completed two turns reads 720 and the next sample,
+    // belonging to the next throw, reads 0. CSS interpolates that as the club
+    // spinning all the way back -- a visible flicker at every catch.
+    //
+    // Carrying an offset while walking the stops in order keeps the angle
+    // continuous: same orientation on screen, nothing for the interpolator to
+    // reverse.
+    //
+    // Ported from the deck this engine came out of, where the composed slide
+    // figures DO consume this CSS and the flicker was plainly visible. Nothing
+    // here renders from toKeyframes today -- the explorer samples per frame --
+    // so this is latent rather than broken, and worth fixing before it bites
+    // the first person who uses the emitter.
+    let unwrapOffset = 0;
+    let prevRaw: number | null = null;
     for (let s = 0; s <= steps; s++) {
       const t = (s / steps) * cycleBeats;
       const p = sampleAt(expanded, t, opts)[i];
-      const rot = p.spin ? ` rotate(${p.spin.toFixed(1)}deg)` : "";
+      // Every stop carries the same transform functions in the same order: a
+      // falsy check here dropped rotate() whenever spin was exactly zero, and
+      // CSS cannot interpolate between `translate(...)` and
+      // `translate(...) rotate(...)`. It snaps instead.
+      const raw = p.spin || 0;
+      if (prevRaw !== null) {
+        const delta = raw - prevRaw;
+        if (delta > 180) unwrapOffset -= 360 * Math.round(delta / 360);
+        else if (delta < -180) unwrapOffset += 360 * Math.round(-delta / 360);
+      }
+      prevRaw = raw;
+      const rot = ` rotate(${(raw + unwrapOffset).toFixed(1)}deg)`;
       stops.push(`${((s / steps) * 100).toFixed(2)}% { transform: translate(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px)${rot}; }`);
     }
     css += `@keyframes ${prefix}-p${i} { ${stops.join(" ")} }\n`;
