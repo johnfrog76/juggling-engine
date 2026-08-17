@@ -137,7 +137,16 @@ export function airtimeOf(value: number): number {
   return Math.max(value - Math.min(DWELL_BEATS, DWELL_FRACTION * value), 0.45);
 }
 
-const HAND_X = 64; // px, hands at ±HAND_X around the centreline
+/**
+ * Half the hand span, in engine units: hands sit at ±HAND_X around the centreline.
+ *
+ * EXPORTED BECAUSE THREE PLACES NEED IT AND ONLY ONE MAY OWN IT. The sync
+ * sampler throws from the same hands, and an avatar has to put its arms exactly
+ * here or the props launch out of empty air beside the body. Both used to
+ * redeclare `64` locally — the avatar with a comment asking a human to keep it
+ * in step, which is the job an export does without being asked.
+ */
+export const HAND_X = 64;
 
 /** Surface gravity, m/s². The one constant whose change re-times the whole deck. */
 export const GRAVITY = { earth: 9.81, mars: 3.71 } as const;
@@ -204,7 +213,11 @@ export type Planet = keyof typeof GRAVITY;
 // complete about sequence, and every other thing a body does is interpretation.
 //
 // Deferred — it changes every call site's geometry, so not mid-QA.
-const APEX_PER_BEAT2_EARTH = 11.5;
+//
+// EXPORTED so the sync sampler shares this number rather than carrying its own
+// copy. Two samplers that disagree about how tall a beat is would drift apart
+// the moment either was re-timed, and nothing would fail loudly.
+export const APEX_PER_BEAT2_EARTH = 11.5;
 
 /**
  * A NOTE ON WHY A 3 LOOKS LOW, and why there is no fudge factor here.

@@ -1,4 +1,12 @@
-import { airtimeOf, apexScale, type Planet, type Prop, type PropPosition } from "./engine";
+import {
+  airtimeOf,
+  apexScale,
+  APEX_PER_BEAT2_EARTH,
+  HAND_X,
+  type Planet,
+  type Prop,
+  type PropPosition,
+} from "./engine";
 
 // ── Synchronous siteswap ─────────────────────────────────────────────────────
 //
@@ -228,13 +236,14 @@ export function syncOrbits(beats: SyncBeat[]): { orbits: SyncFlight[][]; cycleBe
 
 // ── Sampling ────────────────────────────────────────────────────────────────
 
-const HAND_X = 64;
-const APEX_PER_BEAT2_EARTH = 11.5;
-
 /**
  * Where every prop sits at time t. Mirrors the vanilla sampler's shape — same
  * parabola, same carry behaviour, same gravity parameter — so the two paths
  * produce visually consistent patterns.
+ *
+ * The geometry constants are IMPORTED, not restated. Both samplers throw from
+ * the same hands into the same space, so "visually consistent" has to be
+ * structural rather than two copies of 64 that happen to agree today.
  */
 export function sampleSyncAt(
   beats: SyncBeat[],

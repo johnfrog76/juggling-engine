@@ -1,4 +1,4 @@
-import { palmsUpFor, type Prop } from "../engine";
+import { HAND_X, palmsUpFor, type Prop } from "../engine";
 import type { Avatar } from "./avatars";
 import { art } from "./theme";
 
@@ -12,16 +12,19 @@ import { art } from "./theme";
  * A "shadow" was tried and dropped: it was the same silhouette at lower
  * opacity, which is a rendering of the figure rather than a different juggler.
  *
- * GEOMETRY IS SHARED AND FIXED. The engine throws from ±64 units around the
+ * GEOMETRY IS SHARED AND FIXED. The engine throws from ±HAND_X units around the
  * centreline at hand height, so every avatar must put its hands exactly there.
  * They are drawn in the same 160×150 box with the shoulder at (80, 48) and the
  * hands at (80 ± HAND_X, 74) — an avatar that invents its own reach makes the
  * props launch out of empty air beside the body, which is precisely what went
  * wrong when the body was first added.
+ *
+ * HAND_X is IMPORTED FROM THE ENGINE. It used to be a local `64` under a comment
+ * telling the next reader to keep it in step with the sampler by hand; the
+ * import is that instruction, enforced. Only HAND_Y and the shoulder are the
+ * avatar's own — they place a body around the reach, they do not define it.
  */
 
-/** Half the hand span, in engine units. Must match the sampler's HAND_X. */
-const HAND_X = 64;
 /** Where the hands sit in the avatar's own box. */
 const HAND_Y = 74;
 const SHOULDER = { x: 80, y: 48 };
